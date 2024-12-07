@@ -23,5 +23,5 @@ class Message:
         self.recipient_id = int(recipient_id)
         self.subject = subject
         self.content = content or ""  # can send only subject
-        self.date = datetime.now()
+        self.date = ""
         self.blue_v = False
