@@ -4,6 +4,7 @@ from datetime import datetime
 """ funcs here are:
 create tables - as it sounds, void
 add_user - adding one user, input (user_phone INTEGER,user_name STRING)
+add_message
 check_user_exists
 close - close connection to db
 verify_user_credentials
@@ -26,15 +27,17 @@ class DatabaseManager:
             self.c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_phone INTEGER PRIMARY KEY,
-                user_name TEXT,
+                public_key TEXT,
                 user_pw TEXT
             );
             """)
             self.c.execute("""
             CREATE TABLE IF NOT EXISTS messages (
                 message_index INTEGER PRIMARY KEY AUTOINCREMENT,
-                sender_num INTEGER,
-                recipient_num INTEGER,
+                sender_phone INTEGER,
+                recipient_phone INTEGER,
+                session_key_enc TEXT,
+                ciphertext TEXT,
                 subject TEXT,
                 content TEXT,
                 date TEXT,
@@ -48,15 +51,15 @@ class DatabaseManager:
         finally:
             self.conn.close()
 
-    def add_user(self, user_phone, user_name, user_pw):
+    def add_user(self, user_phone, public_key, user_pw):
 
         # to call here to hash func on user_pw
 
         try:
-            self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone, user_name, user_pw))
-            print(f"User {user_name} added successfully!")
+            self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone,  public_key, user_pw))
+            print(f"User {user_phone} added successfully!")
         except sqlite3.Error as e:
-            print(f"Error adding user {user_name}: {e}")
+            print(f"Error adding user {user_phone}: {e}")
 
         self.conn.commit()
 
@@ -78,7 +81,7 @@ class DatabaseManager:
         try:
             # Insert a single message
             self.c.execute("""
-            INSERT INTO messages (sender_id, recipient_id, subject, content, date, blue_v)
+            INSERT INTO messages (sender_num, recipient_num, subject, content, date, blue_v)
             VALUES (?, ?, ?, ?, ?, ?)""",
                            (sender_num, recipient_num, subject, content, curr_timestamp, False))
             # blue_v will be checked later, date is not provide but assigned here
