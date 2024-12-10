@@ -81,7 +81,7 @@ class DatabaseManager:
         try:
             # Insert a single message
             self.c.execute("""
-            INSERT INTO messages (sender_num, recipient_num, subject, content, date, blue_v)
+            INSERT INTO messages (sender_phone, recipient_phone, subject, content, date, blue_v)
             VALUES (?, ?, ?, ?, ?, ?)""",
                            (sender_num, recipient_num, subject, content, curr_timestamp, False))
             # blue_v will be checked later, date is not provide but assigned here
@@ -102,5 +102,5 @@ class DatabaseManager:
         return row is not None and row[0] == password
 
     def fetch_messages_for_user(self, user_phone):
-        self.c.execute("SELECT sender_num, subject, content, date FROM messages WHERE recipient_num=?", (user_phone,))
+        self.c.execute("SELECT sender_phone, subject, content, date FROM messages WHERE recipient_phone=?", (user_phone,))
         return self.c.fetchall()
