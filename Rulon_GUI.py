@@ -65,6 +65,10 @@ class RegisterWindow(ctk.CTk):
         self.geometry("350x250")
         self.configure(bg=COLOR_BG)
 
+        # Initialize timer attributes
+        self.timer_running = False
+        self.time_left = 0
+
         self.phone_var = ctk.StringVar()
         self.token_var = ctk.StringVar()
         self.password_var = ctk.StringVar()
@@ -107,15 +111,32 @@ class RegisterWindow(ctk.CTk):
         self.token_entry.bind("<FocusIn>", self.clear_token_placeholder)
         self.token_entry.bind("<FocusOut>", self.add_token_placeholder)
 
-        validate_token_button = ctk.CTkButton(self, text="Validate Token", fg_color=COLOR_BUTTON, text_color="black",
+        self.validate_token_button = ctk.CTkButton(self, text="Validate Token", fg_color=COLOR_BUTTON, text_color="black",
                                               hover_color=COLOR_BUTTON_HOVER, command=self.validate_token,
                                               corner_radius=15)
-        validate_token_button.pack(pady=5)
+        self.validate_token_button.pack(pady=5)
+
+        # Timer label
+        self.timer_label = ctk.CTkLabel(self, text="", text_color="white", fg_color=COLOR_BG)
+        self.timer_label.pack(pady=10)
 
         self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG)
         self.password_entry = ctk.CTkEntry(self, textvariable=self.password_var, fg_color=COLOR_ENTRY, show="*")
         self.set_pw_button = ctk.CTkButton(self, text="Set Password", fg_color=COLOR_BUTTON,
                                            hover_color=COLOR_BUTTON_HOVER, command=self.set_password)
+
+    def update_timer(self):
+        if self.time_left > 0:
+            self.timer_label.configure(text=f"Time remaining: {self.time_left} seconds")
+            self.time_left -= 1
+            # Schedule the next update after 1 second
+            self.after(1000, self.update_timer)
+        else:
+            # Timer expired
+            self.timer_running = False
+            self.token_entry.configure(state="disabled")
+            self.validate_token_button.configure(state="disabled")
+            self.timer_label.configure(text="Time expired! Request a new token.")
 
     def clear_phone_placeholder(self, event):
         current_text = self.phone_entry.get()
@@ -146,6 +167,8 @@ class RegisterWindow(ctk.CTk):
         generate and store token and phone as instance vars, self.stored_token, self.stored_phone
         """
         phone = self.phone_var.get()
+        self.token_entry.configure(state="normal")
+        self.validate_token_button.configure(state="normal")
         if not phone.startswith("5"):
             messagebox.showerror("Error", "Please enter a phone number.")  # entered null
             return
@@ -163,10 +186,19 @@ class RegisterWindow(ctk.CTk):
         messagebox.showinfo("Token Sent",
                             "Shhhh...Auth token sent securely to terminal. Please enter it below.")
 
+        if not self.timer_running:
+            self.timer_running = True
+            self.time_left = 30
+            self.update_timer()
+
     def validate_token(self):
         """
-        compare entered cardinals with the stored values
+        compare entered cardinals with the stored values, within time range
         """
+        # If time is up, reject token validation
+        if not self.timer_running and self.time_left == 0:
+            messagebox.showerror("Error", "Token expired! Please request a new token.")
+            return
         phone = self.phone_var.get()
         entered_token = self.token_var.get()
 
