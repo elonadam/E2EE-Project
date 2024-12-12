@@ -17,7 +17,7 @@
 
 ### **Protocol Workflow**
 
-#### **1. Registration Phase**
+#### **Registration Phase**
 
 1. **Key Pair Generation (Client)**:
    - Each client generates an **RSA key pair**:
@@ -81,7 +81,7 @@
 
       - **Secure Enclave/Keychain**: Directly generate and store keys using platform APIs, ensuring the private key is non-exportable.
 
-#### **2. Message Exchange Phase**
+#### **Message Exchange Phase**
 
 ##### **Sending a Message (Sender)**
 
@@ -163,7 +163,7 @@
   - Senders sends the package to the server, which relays it to the the recipient.
 
 
-##### **Receiving a Message (the recipient)**
+##### **Receiving a Message (Recipient)**
 
 1. **Decrypt the AES Key**:
 
@@ -203,7 +203,7 @@
 
    - The server sends a confirmation response to the client, ensuring delivery.
 
-### **3. Offline Delivery**
+### **Offline Delivery**
 
 1. If the recipient is offline:
    - The server stores the encrypted message temporarily.
@@ -217,9 +217,7 @@
    **Why?**
    - This minimizes the server's storage requirements and reduces the risk of exposing sensitive information if the server is compromised.
 
----
-
-### **4. Security Features and Guarantees**
+### **Security Features and Guarantees**
 
 | **Requirement**         | **Implementation with RSA**                                                      |
 |--------------------------|-----------------------------------------------------------------------------------|
