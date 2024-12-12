@@ -1,7 +1,10 @@
+import hashlib
+
 import customtkinter as ctk
 from tkinter import messagebox
 from db_manager import DatabaseManager
 from random import randint
+from encryption_funcs import *  # hash_password, verify_password
 
 # -------------------- Settings --------------------
 ctk.set_appearance_mode("dark")  # "light" or "dark"
@@ -111,9 +114,10 @@ class RegisterWindow(ctk.CTk):
         self.token_entry.bind("<FocusIn>", self.clear_token_placeholder)
         self.token_entry.bind("<FocusOut>", self.add_token_placeholder)
 
-        self.validate_token_button = ctk.CTkButton(self, text="Validate Token", fg_color=COLOR_BUTTON, text_color="black",
-                                              hover_color=COLOR_BUTTON_HOVER, command=self.validate_token,
-                                              corner_radius=15)
+        self.validate_token_button = ctk.CTkButton(self, text="Validate Token", fg_color=COLOR_BUTTON,
+                                                   text_color="black",
+                                                   hover_color=COLOR_BUTTON_HOVER, command=self.validate_token,
+                                                   corner_radius=15)
         self.validate_token_button.pack(pady=5)
 
         # Timer label
@@ -210,10 +214,11 @@ class RegisterWindow(ctk.CTk):
         # Compare entered token and phone to the stored ones
         if phone == self.stored_phone and entered_token == str(self.stored_token):
             messagebox.showinfo("Success", "Token validated. Please create your password.")
-            self.geometry("350x400")
+            self.geometry("350x320")
             self.password_label.pack(pady=5)
             self.password_entry.pack(pady=5)
             self.set_pw_button.pack(pady=5)
+            self.timer_label.pack_forget()  # hide counter after validation of token
         else:
             messagebox.showerror("Error", "Invalid token.")
 
@@ -223,8 +228,9 @@ class RegisterWindow(ctk.CTk):
         if password:
             # Register user in DB using DatabaseManager
             db = DatabaseManager()
-            # TODO 1 encrypt the password b4 storing it
-            db.add_user(user_phone=phone, public_key="", user_pw=password)
+            hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
+            # Note: hashed_pw is bytes. We'll store it as a string in the DB.
+            db.add_user(user_phone=phone, public_key="", user_pw=hashed_pw.decode())
             messagebox.showinfo("Registered", "Registration successful! You can now login.")
             self.destroy()
             start_win = StartWindow()
@@ -264,18 +270,27 @@ class LoginWindow(ctk.CTk):
         phone = self.phone_var.get()
         password = self.password_var.get()
         db = DatabaseManager()
-        if db.verify_user_credentials(phone, password):  # This method you add to db_manager.py
+        user = db.get_user(phone)
+        if not user:
+            self.invalid_credentials()
+            return
+
+        stored_hashed_pw = user[2].encode()  # Convert back to bytes
+        if verify_password_bcrypt(password, stored_hashed_pw):
             messagebox.showinfo("Login", "Login successful!")
             self.destroy()
             msg_window = MessagesWindow(phone)
             msg_window.mainloop()
         else:
-            self.attempt_count += 1
-            if self.attempt_count < 3:
-                messagebox.showerror("Error", f"Invalid credentials. Attempt {self.attempt_count}/3.")
-            else:
-                messagebox.showerror("Error", "Too many failed attempts. Closing application.")
-                self.destroy()
+            self.invalid_credentials()
+
+    def invalid_credentials(self):
+        self.attempt_count += 1
+        if self.attempt_count < 3:
+            messagebox.showerror("Error", f"Invalid credentials. Attempt {self.attempt_count}/3.")
+        else:
+            messagebox.showerror("Error", "Too many failed attempts. Closing application.")
+            self.destroy()
 
 
 class MessagesWindow(ctk.CTk):
@@ -304,37 +319,37 @@ class MessagesWindow(ctk.CTk):
 
         send_label = ctk.CTkLabel(send_frame, text="Send a New Message", text_color="white", fg_color="#1C1C1C",
                                   font=("Arial", 16))
-        send_label.pack(pady=5)
+        send_label.pack(pady=5 , padx=5, anchor='w')
 
         # Recipient Entry
         recipient_label = ctk.CTkLabel(send_frame, text="Recipient Phone:", text_color="white", fg_color="#1C1C1C")
-        recipient_label.pack(pady=5)
+        recipient_label.pack(pady=5, padx=5, anchor='w')
         self.recipient_var = ctk.StringVar()
         recipient_entry = ctk.CTkEntry(send_frame, textvariable=self.recipient_var, fg_color=COLOR_ENTRY)
-        recipient_entry.pack(pady=5)
+        recipient_entry.pack(pady=5, padx=5, anchor='w')
 
         # Subject Entry
         subject_label = ctk.CTkLabel(send_frame, text="Subject:", text_color="white", fg_color="#1C1C1C")
-        subject_label.pack(pady=5)
+        subject_label.pack(pady=5, padx=5, anchor='w')
         self.subject_var = ctk.StringVar()
         subject_entry = ctk.CTkEntry(send_frame, textvariable=self.subject_var, fg_color=COLOR_ENTRY)
-        subject_entry.pack(pady=5)
+        subject_entry.pack(pady=5, padx=5, anchor='w')
 
         # Content Entry (use a Textbox for multiple lines if needed, here just single line for simplicity)
         content_label = ctk.CTkLabel(send_frame, text="Content:", text_color="white", fg_color="#1C1C1C")
-        content_label.pack(pady=5)
+        content_label.pack(pady=5, padx=5, anchor='w')
         self.content_var = ctk.StringVar()
         content_entry = ctk.CTkEntry(send_frame, textvariable=self.content_var, fg_color=COLOR_ENTRY, width=400)
-        content_entry.pack(pady=5)
+        content_entry.pack(pady=5, padx=5, anchor='w')
 
         send_button = ctk.CTkButton(send_frame, text="Send Message", fg_color=COLOR_BUTTON,
                                     hover_color=COLOR_BUTTON_HOVER, text_color="black", command=self.send_message)
-        send_button.pack(pady=10)
+        send_button.pack(pady=10, padx=5, anchor='w')
 
         # Logout/Back button at the bottom
         back_button = ctk.CTkButton(self, text="Logout", fg_color=COLOR_BUTTON,
                                     hover_color=COLOR_BUTTON_HOVER, command=self.back_to_start)
-        back_button.pack(pady=10)
+        back_button.pack(pady=10, padx=5, anchor='e')
 
     def display_messages(self):
         # Clear previous message frames if any
