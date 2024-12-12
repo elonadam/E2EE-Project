@@ -1,4 +1,3 @@
-BOB and Alice
 ### **Components and Key Choices**
 
 #### **1. Encryption Algorithms**
