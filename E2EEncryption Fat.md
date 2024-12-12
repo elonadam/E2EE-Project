@@ -1,11 +1,5 @@
 ### **End-to-End Encrypted Messaging Protocol Using RSA and AES**
 
-#### **Introduction**
-
-This protocol ensures secure end-to-end encrypted communication using RSA and AES. It guarantees confidentiality, integrity, and authentication, preventing MITM (Man-in-the-Middle) attacks while optimizing for performance.
-
----
-
 ### **Components and Key Choices**
 
 #### **1. Encryption Algorithms**
@@ -22,7 +16,72 @@ This protocol ensures secure end-to-end encrypted communication using RSA and AE
   - **Why AES-256?**: Faster than RSA for large data encryption and provides strong security against brute-force attacks.
   - **Usage**: Encrypts the actual message content using a session key.
 
-#### **2. Key Storage**
+#### **3. Sockets and Data Transmission**
+
+- **Purpose**: Sockets are used for real-time communication between the client and the server.
+- **Implementation**:
+  - Use **secure sockets (TLS)** to establish a secure channel for data transmission.
+  - Ensure mutual authentication with certificates.
+
+**Example of Socket Initialization:**
+```python
+import socket
+import ssl
+
+# Create a socket
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Wrap the socket with SSL/TLS
+context = ssl.create_default_context()
+wrapped_socket = context.wrap_socket(client_socket, server_hostname="example.com")
+
+# Connect to the server
+wrapped_socket.connect(("example.com", 443))
+
+# Send data (e.g., the public key or encrypted message)
+wrapped_socket.sendall(b"Hello, Secure Server!")
+
+# Close the connection
+wrapped_socket.close()
+```
+
+- **Temporary Data in RAM**: Any sensitive data, such session keys or decrypted messages, resides only in RAM during processing and is securely erased afterward.
+
+---
+
+### **Protocol Workflow**
+
+#### **1. Registration Phase**
+
+1. **Key Pair Generation (Client)**:
+
+   - The client generates an RSA key pair.
+   - Example Code:
+     ```python
+     from cryptography.hazmat.primitives.asymmetric import rsa
+     from cryptography.hazmat.primitives import serialization
+
+     def generate_rsa_keypair():
+         private_key = rsa.generate_private_key(
+             public_exponent=65537,
+             key_size=2048
+         )
+         public_key = private_key.public_key()
+
+         return {
+             "private_key": private_key,
+             "public_key": public_key
+         }
+     client_keys = generate_rsa_keypair()
+     ```
+
+2. **Public Key Transmission**:
+
+   - The client sends its public key to the server over a **secure channel** (e.g., HTTPS).
+   - The server stores the public key securely.
+
+
+3. **Key Storage**:
 
 - **Client-Side**:
 
@@ -93,82 +152,6 @@ This protocol ensures secure end-to-end encrypted communication using RSA and AE
           ctypes.memset(offset, 0, length)
       ```
 
-#### **3. Sockets and Data Transmission**
-
-- **Purpose**: Sockets are used for real-time communication between the client and the server.
-- **Implementation**:
-  - Use **secure sockets (TLS)** to establish a secure channel for data transmission.
-  - Ensure mutual authentication with certificates.
-
-**Example of Socket Initialization:**
-```python
-import socket
-import ssl
-
-# Create a socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Wrap the socket with SSL/TLS
-context = ssl.create_default_context()
-wrapped_socket = context.wrap_socket(client_socket, server_hostname="example.com")
-
-# Connect to the server
-wrapped_socket.connect(("example.com", 443))
-
-# Send data (e.g., the public key or encrypted message)
-wrapped_socket.sendall(b"Hello, Secure Server!")
-
-# Close the connection
-wrapped_socket.close()
-```
-
-- **Temporary Data in RAM**: Any sensitive data, such as OTPs, session keys, or decrypted messages, resides only in RAM during processing and is securely erased afterward.
-  - Use proper memory management techniques (e.g., `ctypes` for secure erasure).
-  - Avoid writing sensitive data to disk or logs.
-
----
-
-### **Protocol Workflow**
-
-#### **1. Registration Phase**
-
-1. **Key Pair Generation (Client)**:
-
-   - The client generates an RSA key pair.
-   - Example Code:
-     ```python
-     from cryptography.hazmat.primitives.asymmetric import rsa
-     from cryptography.hazmat.primitives import serialization
-
-     def generate_rsa_keypair():
-         private_key = rsa.generate_private_key(
-             public_exponent=65537,
-             key_size=2048
-         )
-         public_key = private_key.public_key()
-
-         return {
-             "private_key": private_key,
-             "public_key": public_key
-         }
-     client_keys = generate_rsa_keypair()
-     ```
-
-2. **Public Key Transmission**:
-
-   - The client sends its public key to the server over a **secure channel** (e.g., HTTPS).
-   - The server stores the public key securely.
-
-3. **Key Storage (Server)**:
-
-   - The client’s public key is stored in a database with proper access controls:
-     ```json
-     {
-         "client_id": "client123",
-         "public_key": "<base64_encoded_public_key>"
-     }
-     ```
-
 #### **2. Message Exchange Phase**
 
 ##### **Sending a Message (Client)**
@@ -229,21 +212,7 @@ wrapped_socket.close()
      encrypted_aes_key = rsa_encrypt_with_public_key(server_public_key, aes_key)
      ```
 
-4. **Compute Message Integrity (MAC)**:
-
-   - The client computes a SHA-256 MAC for the encrypted message. Using a MAC (Message Authentication Code) ensures the integrity of the data. If any part of the message is tampered with during transmission, the MAC verification will fail, alerting the recipient that the data has been modified. This is critical for maintaining trust in communication by protecting against data tampering and replay attacks.
-   - Example Code:
-     ```python
-     from cryptography.hazmat.primitives import hashes
-
-     def compute_mac(data):
-         digest = hashes.Hash(hashes.SHA256())
-         digest.update(data)
-         return digest.finalize()
-     mac = compute_mac(encrypted_message["ciphertext"])
-     ```
-
-5. **Send the Message**:
+4. **Send the Message**:
 
    - The payload is sent to the server:
      ```json
@@ -291,25 +260,10 @@ wrapped_socket.close()
      message = aes_decrypt(encrypted_message["ciphertext"], aes_key, encrypted_message["iv"])
      ```
 
-3. **Verify the MAC**:
-
-   - The server computes the MAC and compares it with the received value.
-
-4. **Send Acknowledgment**:
+3. **Send Acknowledgment**:
 
    - The server sends a confirmation response to the client, ensuring delivery.
-
----
-
-### **Security Enhancements**
-
-1. **Key Rotation**:
-   - Rotate RSA key pairs periodically to ensure long-term security.
-2. **Session Expiry**:
-   - AES session keys are valid for a single session or message to limit exposure.
-3. **Replay Attack Prevention**:
-   - Include a unique timestamp or message ID in the payload.
-
+   - 
 ---
 
 ### **User Flow**
@@ -320,6 +274,3 @@ wrapped_socket.close()
    - User composes a message, which is encrypted and sent securely.
 3. **Receiving Messages**:
    - The recipient decrypts the message and views it in plaintext.
-
-This protocol ensures robust security and seamless user experience for encrypted messaging.
-
