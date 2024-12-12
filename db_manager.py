@@ -1,4 +1,5 @@
 import sqlite3
+import hashlib
 from datetime import datetime
 
 """ funcs here are:
@@ -9,6 +10,8 @@ check_user_exists
 close - close connection to db
 verify_user_credentials
 fetch_messages_for_user
+get_user
+
 """
 
 
@@ -28,7 +31,7 @@ class DatabaseManager:
             CREATE TABLE IF NOT EXISTS users (
                 user_phone INTEGER PRIMARY KEY,
                 public_key TEXT,
-                user_pw TEXT
+                user_pw VARCHAR(100)
             );
             """)
             self.c.execute("""
@@ -56,7 +59,7 @@ class DatabaseManager:
         # to call here to hash func on user_pw
 
         try:
-            self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone,  public_key, user_pw))
+            self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone, public_key, user_pw))
             print(f"User {user_phone} added successfully!")
         except sqlite3.Error as e:
             print(f"Error adding user {user_phone}: {e}")
@@ -102,5 +105,15 @@ class DatabaseManager:
         return row is not None and row[0] == password
 
     def fetch_messages_for_user(self, user_phone):
-        self.c.execute("SELECT sender_phone, subject, content, date FROM messages WHERE recipient_phone=?", (user_phone,))
+        self.c.execute("SELECT sender_phone, subject, content, date FROM messages WHERE recipient_phone=?",
+                       (user_phone,))
         return self.c.fetchall()
+
+    def get_user(self, phone):
+        try:
+            query = "SELECT * FROM users WHERE user_phone = ?"
+            self.c.execute(query, (phone,))
+            return self.c.fetchone()
+        except sqlite3.Error as e:
+            print(f"Error while checking user existence: {e}")
+            return False
