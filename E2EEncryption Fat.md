@@ -5,48 +5,14 @@
 #### **1. Encryption Algorithms**
 
 - **RSA-2048**:
-
   - **Purpose**: Used for secure key exchange.
   - **Why RSA-2048?**: Provides strong security against modern computational capabilities while balancing performance.
   - **Usage**: Encrypts AES session keys.
 
 - **AES-256**:
-
   - **Purpose**: Used for encrypting message payloads.
   - **Why AES-256?**: Faster than RSA for large data encryption and provides strong security against brute-force attacks.
   - **Usage**: Encrypts the actual message content using a session key.
-
-#### **2. Sockets and Data Transmission**
-
-- **Purpose**: Sockets are used for real-time communication between the client and the server.
-- **Implementation**:
-  - Use **secure sockets (TLS)** to establish a secure channel for data transmission.
-  - Ensure mutual authentication with certificates.
-
-**Example of Socket Initialization:**
-```python
-import socket
-import ssl
-
-# Create a socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Wrap the socket with SSL/TLS
-context = ssl.create_default_context()
-wrapped_socket = context.wrap_socket(client_socket, server_hostname="example.com")
-
-# Connect to the server
-wrapped_socket.connect(("example.com", 443))
-
-# Send data (e.g., the public key or encrypted message)
-wrapped_socket.sendall(b"Hello, Secure Server!")
-
-# Close the connection
-wrapped_socket.close()
-```
-
-- **Temporary Data in RAM**: Any sensitive data, such session keys or decrypted messages, resides only in RAM during processing and is securely erased afterward.
-
 ---
 
 ### **Protocol Workflow**
@@ -54,8 +20,23 @@ wrapped_socket.close()
 #### **1. Registration Phase**
 
 1. **Key Pair Generation (Client)**:
+   - Each client generates an **RSA key pair**:
+     - **Public Key**: Used to encrypt the AES key.
+     - **Private Key**: Used to decrypt the AES key.
+   - RSA keys are asymmetric, meaning the public key is shared with others while the private key remains secret.
 
-   - The client generates an RSA key pair.
+   **Why?**
+   - Asymmetric encryption allows for secure communication without needing a pre-shared secret. This is ideal for systems where the sender and recipient may not have direct contact to exchange a symmetric key securely.
+   - RSA keys are well-suited for encrypting small pieces of data (like an AES key).
+
+   **Client RSA Public Key**:
+   - During registration, each client sends their **public key** to the server over a secure channel.
+   - The server securely stores each client’s public key, indexed by their unique identifier.
+
+   **Why?**
+   - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when she needs to send a message.
+   - Storing only public keys on the server minimizes the risk of sensitive data leaks if the server is compromised.
+
    - Example Code:
      ```python
      from cryptography.hazmat.primitives.asymmetric import rsa
@@ -74,20 +55,8 @@ wrapped_socket.close()
          }
      client_keys = generate_rsa_keypair()
      ```
-
-2. **Public Key Transmission**:
-
-   - The client sends its public key to the server over a **secure channel** (e.g., HTTPS).
-   - The server stores the public key securely.
-
-
-3. **Key Storage**:
-
-- **Client-Side**:
-
   - **Client RSA Private Key**:
-    - Stored in a **secure enclave or keychain** (e.g., Android Keystore, iOS Keychain).
-    - If hardware-backed storage isn’t available, it is encrypted with AES-256 using a strong user-derived password.
+    - It is encrypted with AES-256 using a strong user-derived password.
     - **Code Example for Secure Storage**:
       ```python
       from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -110,71 +79,27 @@ wrapped_socket.close()
           return salt, encrypted_private_key
       ```
 
-      - **Secure Enclave/Keychain**: Directly generate and store keys using platform APIs, ensuring the private key is non-exportable (e.g., Android Keystore).
-
-  - **Server RSA Public Key**:
-    - Embedded in the client application during deployment.
-    - Validated using signatures or fingerprints to prevent tampering.
-    - Stored in a read-only section of the application’s configuration or hardcoded within the app binary.
-
-- **Server-Side**:
-
-  - **Server RSA Private Key**:
-    - Stored in a **Hardware Security Module (HSM)** or a **Key Management System (KMS)**.
-    - Example Code for Storage in an Encrypted File:
-      ```python
-      def store_private_key_securely(private_key_pem, file_path, password):
-          salt, encrypted_key = encrypt_private_key(private_key_pem, password)
-          with open(file_path, "wb") as key_file:
-              key_file.write(salt + encrypted_key)
-      ```
-      - HSMs ensure tamper-proof hardware storage and provide cryptographic operations without exporting private keys.
-      - If HSMs are unavailable, the private key is stored in an encrypted file (e.g., using AES-256) with strict file system permissions limiting access to authorized processes.
-      - The private key is regularly rotated and backed up in a secure, offline location.
-
-  - **Client RSA Public Keys**:
-    - Stored in the server database with proper access controls.
-    - Example Storage:
-      - Each client’s public key is stored in a table indexed by a unique client ID.
-      - The database is encrypted at rest using a server-managed encryption key.
-
-  - **AES Session Keys**:
-    - Ephemeral session keys are generated for each message or session.
-    - Stored only in memory (RAM) during the session’s lifetime and securely erased after use.
-    - Code to Securely Erase:
-      ```python
-      import ctypes
-      import os
-
-      def secure_erase(key):
-          length = len(key)
-          offset = ctypes.addressof(ctypes.create_string_buffer(key))
-          ctypes.memset(offset, 0, length)
-      ```
+      - **Secure Enclave/Keychain**: Directly generate and store keys using platform APIs, ensuring the private key is non-exportable.
 
 #### **2. Message Exchange Phase**
 
-##### **Sending a Message (Client)**
+##### **Sending a Message (Sender)**
 
-1. **Generate AES-256 Session Key**:
+1. **Encrypt the Message**:
 
-   - A random AES key is generated for encrypting the message.
-   - Example Code:
-     ```python
-     import os
-     def generate_aes_key():
-         return os.urandom(32)  # 256-bit key
-     aes_key = generate_aes_key()
-     ```
-
-2. **Encrypt the Message**:
-
-   - The message is encrypted using AES-256 in CBC mode with a random IV.
+- Before encrypting the message, the sender generates:
+  1. A **random AES key** (256 bits).
+  2. A **random Initialization Vector (IV)** (128 bits) for use with AES in CBC mode.
    - Example Code:
      ```python
      from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
      from cryptography.hazmat.primitives import padding
+     import os
 
+     def generate_aes_key():
+         return os.urandom(32)  # 256-bit key
+     aes_key = generate_aes_key()
+    
      def aes_encrypt(message, aes_key):
          iv = os.urandom(16)
          cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
@@ -188,13 +113,16 @@ wrapped_socket.close()
              "ciphertext": ciphertext,
              "iv": iv
          }
-     encrypted_message = aes_encrypt(b"Hello, this is a test!", aes_key)
-     ```
+    ```
+
+     - The sender encrypts the actual message using AES and the random AES key:
+    ```plaintext
+    ciphertext = AES_Encrypt(message, AES_key, IV)
+    ```
 
 3. **Encrypt the AES Key**:
 
-   - The AES session key is encrypted with the **server’s public RSA key**.
-   - Example Code:
+   - The AES session key is encrypted with the **the recipient’s public RSA key**.
      ```python
      from cryptography.hazmat.primitives.asymmetric import padding
      from cryptography.hazmat.primitives import hashes
@@ -212,23 +140,34 @@ wrapped_socket.close()
      encrypted_aes_key = rsa_encrypt_with_public_key(server_public_key, aes_key)
      ```
 
+    **Why?**
+    - RSA encryption ensures that only the the recipient (who has the corresponding private key) can decrypt the AES key.
+    - Encrypting the AES key allows both the sender and the recipient to securely use a symmetric encryption algorithm (AES) for the actual message, combining the efficiency of AES with the security of RSA.
+
 4. **Send the Message**:
 
-   - The payload is sent to the server:
-     ```json
-     {
-         "encrypted_message": "<base64_encoded_ciphertext>",
-         "encrypted_aes_key": "<base64_encoded_rsa_ciphertext>",
-         "iv": "<base64_encoded_iv>",
-         "mac": "<base64_encoded_mac>"
-     }
-     ```
+  - Sender creates a message package containing:
+    - The **encrypted AES key** (RSA-encrypted).
+    - The **IV** (used for AES encryption).
+    - The **ciphertext** (AES-encrypted message).
 
-##### **Receiving a Message (Server)**
+  - Example of the message structure:
+    ```json
+    {
+        "sender_public_key": "<the sender's public key>",
+        "encrypted_aes_key": "<RSA-encrypted AES key>",
+        "iv": "<Initialization Vector>",
+        "ciphertext": "<AES-encrypted message>"
+    }
+  ```
+  - Senders sends the package to the server, which relays it to the the recipient.
+
+
+##### **Receiving a Message (the recipient)**
 
 1. **Decrypt the AES Key**:
 
-   - The server uses its private RSA key to decrypt the AES session key.
+   - The the recipient uses its private RSA key to decrypt the AES session key.
    - Example Code:
      ```python
      def rsa_decrypt_with_private_key(private_key, encrypted_data):
@@ -263,14 +202,31 @@ wrapped_socket.close()
 3. **Send Acknowledgment**:
 
    - The server sends a confirmation response to the client, ensuring delivery.
-   - 
+
+### **3. Offline Delivery**
+
+1. If the recipient is offline:
+   - The server stores the encrypted message temporarily.
+   - When the the recipient reconnects, the server delivers the message to him.
+
+   **Why?**
+   - This ensures that messages are not lost if the recipient is unavailable when the sender transmits them.
+
+2. The message is deleted from the server after successful delivery.
+
+   **Why?**
+   - This minimizes the server's storage requirements and reduces the risk of exposing sensitive information if the server is compromised.
+
 ---
 
-### **User Flow**
+### **4. Security Features and Guarantees**
 
-1. **Registration**:
-   - User installs the application, generates RSA keys, and registers with the server.
-2. **Messaging**:
-   - User composes a message, which is encrypted and sent securely.
-3. **Receiving Messages**:
-   - The recipient decrypts the message and views it in plaintext.
+| **Requirement**         | **Implementation with RSA**                                                      |
+|--------------------------|-----------------------------------------------------------------------------------|
+| **Confidentiality**      | Messages are encrypted using AES-256; AES keys are RSA-encrypted.                |
+| **Authentication**       | RSA ensures that only the the recipient can decrypt the AES key, confirming the recipient’s identity. |
+| **Integrity**            | Optional HMAC or MAC can be added to verify the message's authenticity and prevent tampering. |
+| **Resistance to MITM**   | RSA ensures that only the recipient with the private key can decrypt the AES key. |
+| **Offline Delivery**     | The server can store encrypted messages securely for offline recipients.          |
+
+---
