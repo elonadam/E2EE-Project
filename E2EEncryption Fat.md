@@ -16,7 +16,7 @@
   - **Why AES-256?**: Faster than RSA for large data encryption and provides strong security against brute-force attacks.
   - **Usage**: Encrypts the actual message content using a session key.
 
-#### **3. Sockets and Data Transmission**
+#### **2. Sockets and Data Transmission**
 
 - **Purpose**: Sockets are used for real-time communication between the client and the server.
 - **Implementation**:
