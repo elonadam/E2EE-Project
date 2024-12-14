@@ -344,6 +344,7 @@ class MessagesWindow(ctk.CTk):
 
         send_button = ctk.CTkButton(send_frame, text="Send Message", fg_color=COLOR_BUTTON,
                                     hover_color=COLOR_BUTTON_HOVER, text_color="black", command=self.send_message)
+        #TODO send button sends to encryption method and then uploads to server
         send_button.pack(pady=10, padx=5, anchor='w')
 
         # Logout/Back button at the bottom
@@ -391,7 +392,7 @@ class MessagesWindow(ctk.CTk):
         if not content:
             messagebox.showerror("Error", "Please enter message content.")
             return
-
+        #TODO encrypt message here before adding to DB
         # Send the message
         db = DatabaseManager()
         try:
