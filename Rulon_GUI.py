@@ -366,7 +366,7 @@ class MessagesWindow(ctk.CTk):
             sender, subject, enc_aes_key, nonce, ciphertext, date = msg
 
             # Decrypt AES key using our private key
-            # Load your private key (stored securely, decrypted in memory)TODO
+            # Load your private key (stored securely, decrypted in memory)
             aes_key = rsa_decrypt_aes_key(enc_aes_key, private_key_pem, passphrase=b"MyPass")
 
             # Decrypt message
@@ -376,16 +376,19 @@ class MessagesWindow(ctk.CTk):
             # Display as before
             msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
             msg_frame.pack(fill="x", pady=5)
-            
-            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white", fg_color="#1C1C1C", anchor="w")
-            sender_label.pack(fill="x", padx=5)
-            subject_label = ctk.CTkLabel(msg_frame, text=f"Subject: {subject}", text_color="white", fg_color="#1C1C1C", anchor="w")
-            subject_label.pack(fill="x", padx=5)
-            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white", fg_color="#1C1C1C", anchor="w")
-            date_label.pack(fill="x", padx=5)
-            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="white", fg_color="#1C1C1C", anchor="w")
-            content_label.pack(fill="x", padx=5)
 
+            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white", fg_color="#1C1C1C",
+                                        anchor="w")
+            sender_label.pack(fill="x", padx=5)
+            subject_label = ctk.CTkLabel(msg_frame, text=f"Subject: {subject}", text_color="white", fg_color="#1C1C1C",
+                                         anchor="w")
+            subject_label.pack(fill="x", padx=5)
+            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white", fg_color="#1C1C1C",
+                                      anchor="w")
+            date_label.pack(fill="x", padx=5)
+            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="white", fg_color="#1C1C1C",
+                                         anchor="w")
+            content_label.pack(fill="x", padx=5)
 
     def send_message(self):
         recipient = self.recipient_var.get()
@@ -407,9 +410,10 @@ class MessagesWindow(ctk.CTk):
         db = DatabaseManager()
 
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        recipient_public_key_pem = ##how to do so TODO
+        plain_text = subject+content
+        recipient_public_key_pem = db.get_user_public_key(recipient_phone)
         aes_key = os.urandom(32) # for aes-256
-        nonce, ciphertext = encrypt_message_with_aes(aes_key, plaintext)
+        nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
