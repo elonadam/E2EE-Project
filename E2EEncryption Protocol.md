@@ -201,7 +201,7 @@
      ```
 
 3. **Send Acknowledgment**:
-   -  - After successfully decrypting the message, the recipient **must** send an acknowledgment message to the sender via the server.
+   - After successfully decrypting the message, the recipient must send an acknowledgment message to the sender via the server.
    - The acknowledgment contains:
      - **Recipient's identifier**.
      - **Message ID** (the time that the message was sent).
