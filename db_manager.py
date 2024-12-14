@@ -10,7 +10,6 @@ check_user_exists
 close - close connection to db
 verify_user_credentials
 fetch_messages_for_user
-get_user
 
 """
 
