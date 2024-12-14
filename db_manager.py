@@ -1,5 +1,4 @@
 import sqlite3
-from encryption_funcs import hash_password_bcrypt, verify_password_bcrypt
 from datetime import datetime
 
 """ funcs here are:
@@ -52,10 +51,8 @@ class DatabaseManager:
             self.conn.close()
 
     def add_user(self, user_phone, public_key, user_pw):
-        hashed_pw = self.hash_password_bcrypt(user_pw)
-
         try:
-            self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone, public_key, hashed_pw))
+            self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone, public_key, user_pw))
             print(f"User {user_phone} added successfully!")
         except sqlite3.Error as e:
             print(f"Error adding user {user_phone}: {e}")
