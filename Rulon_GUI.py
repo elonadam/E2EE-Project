@@ -1,3 +1,5 @@
+
+import os
 import customtkinter as ctk
 from tkinter import messagebox
 from db_manager import DatabaseManager
@@ -226,6 +228,10 @@ class RegisterWindow(ctk.CTk):
         if password:
             # Register user in DB using DatabaseManager
             db = DatabaseManager()
+
+            #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            private_key_pem, public_key_pem = generate_rsa_key_pair(passphrase=b"my_pass")
+            #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
             db.add_user(user_phone=phone, public_key="", user_pw=hashed_pw.decode())
@@ -333,7 +339,7 @@ class MessagesWindow(ctk.CTk):
         subject_entry = ctk.CTkEntry(send_frame, textvariable=self.subject_var, fg_color=COLOR_ENTRY)
         subject_entry.pack(pady=5, padx=5, anchor='w')
 
-        # Content Entry (use a Textbox for multiple lines if needed, here just single line for simplicity)
+        # Content Entry just single line for simplicity
         content_label = ctk.CTkLabel(send_frame, text="Content:", text_color="white", fg_color="#1C1C1C")
         content_label.pack(pady=5, padx=5, anchor='w')
         self.content_var = ctk.StringVar()
@@ -342,7 +348,6 @@ class MessagesWindow(ctk.CTk):
 
         send_button = ctk.CTkButton(send_frame, text="Send Message", fg_color=COLOR_BUTTON,
                                     hover_color=COLOR_BUTTON_HOVER, text_color="black", command=self.send_message)
-        #TODO send button sends to encryption method and then uploads to server
         send_button.pack(pady=10, padx=5, anchor='w')
 
         # Logout/Back button at the bottom
@@ -390,9 +395,16 @@ class MessagesWindow(ctk.CTk):
         if not content:
             messagebox.showerror("Error", "Please enter message content.")
             return
-        #TODO encrypt message here before adding to DB
+
         # Send the message
         db = DatabaseManager()
+
+        #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        recipient_public_key_pem = ##how to do so TODO
+        aes_key = os.urandom(32) # for aes-256
+        nonce, ciphertext = encrypt_message_with_aes(aes_key, plaintext)
+        enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
+        #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
             db.add_message(sender_num=self.phone, recipient_num=recipient, subject=subject, content=content)
             messagebox.showinfo("Success", "Message sent successfully!")
