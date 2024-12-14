@@ -145,7 +145,7 @@
     - The **recipient's public key** (recipient's public key).
     - The **encrypted AES key** (RSA-encrypted with the recipient's public key).
     - The **IV** (used for AES encryption of the message).
-    - The **ciphertext** (the AES-encrypted message).
+    - The **ciphertext** (the AES-encrypted message - includes the subject and content).
 
     ```json
     {
