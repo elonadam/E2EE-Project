@@ -1,5 +1,6 @@
 # import hashlib
 # import secrets
+import os
 import bcrypt
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
@@ -120,7 +121,7 @@ def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_private_key_pem: bytes, pa
     return aes_key
 
 
-def encrypt_message_with_aes(aes_key: bytes, plaintext: bytes) -> (bytes, bytes, bytes):
+def encrypt_message_with_aes(aes_key: bytes, plaintext: bytes):
     """
     Encrypt plaintext using AES-GCM.
 
