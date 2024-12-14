@@ -146,21 +146,24 @@
 
 4. **Send the Message**:
 
-  - Sender creates a message package containing:
-    - The **encrypted AES key** (RSA-encrypted).
-    - The **IV** (used for AES encryption).
-    - The **ciphertext** (AES-encrypted message).
+  - The sender creates a message package containing:
+    - The **sender's public key** (for recipient verification).
+    - The **recipient's public key** (recipient's public key).
+    - The **encrypted AES key** (RSA-encrypted with the recipient's public key).
+    - The **IV** (used for AES encryption of the message).
+    - The **ciphertext** (the AES-encrypted message).
 
-  - Example of the message structure:
+  - Updated example of the message structure:
     ```json
     {
         "sender_public_key": "<the sender's public key>",
+        "recipient_public_key": "<recipient's public key>",
         "encrypted_aes_key": "<RSA-encrypted AES key>",
         "iv": "<Initialization Vector>",
         "ciphertext": "<AES-encrypted message>"
     }
-  ```
-  - Senders sends the package to the server, which relays it to the the recipient.
+    ```
+  - The sender sends this package to the server, which securely relays it to the intended recipient.
 
 
 ##### **Receiving a Message (Recipient)**
