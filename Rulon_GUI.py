@@ -1,5 +1,3 @@
-import hashlib
-
 import customtkinter as ctk
 from tkinter import messagebox
 from db_manager import DatabaseManager
