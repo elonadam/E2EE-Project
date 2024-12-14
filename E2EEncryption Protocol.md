@@ -120,9 +120,9 @@
     ciphertext = AES_Encrypt(message, AES_key, IV)
     ```
 
-3. **Encrypt the AES Key**:
+2. **Encrypt the AES Key**:
 
-   - The AES session key is encrypted with the **the recipient’s public RSA key**.
+   - The AES session key is encrypted with the the recipient’s public RSA key.
      ```python
      from cryptography.hazmat.primitives.asymmetric import padding
      from cryptography.hazmat.primitives import hashes
@@ -144,8 +144,7 @@
     - RSA encryption ensures that only the the recipient (who has the corresponding private key) can decrypt the AES key.
     - Encrypting the AES key allows both the sender and the recipient to securely use a symmetric encryption algorithm (AES) for the actual message, combining the efficiency of AES with the security of RSA.
 
-4. **Send the Message**:
-
+3. **Package the Encrypted Message**:
   - The sender creates a message package containing:
     - The **sender's public key** (for recipient verification).
     - The **recipient's public key** (recipient's public key).
@@ -163,7 +162,10 @@
         "ciphertext": "<AES-encrypted message>"
     }
     ```
-  - The sender sends this package to the server, which securely relays it to the intended recipient.
+    
+4. **Send the Message**:
+   - Transmit the message package to the server.
+   - The server relays it securely to the recipient.
 
 
 ##### **Receiving a Message (Recipient)**
@@ -171,7 +173,6 @@
 1. **Decrypt the AES Key**:
 
    - The the recipient uses its private RSA key to decrypt the AES session key.
-   - Example Code:
      ```python
      def rsa_decrypt_with_private_key(private_key, encrypted_data):
          decrypted = private_key.decrypt(
@@ -188,8 +189,7 @@
 
 2. **Decrypt the Message**:
 
-   - The server decrypts the message using the AES key and IV.
-   - Example Code:
+   - Use the decrypted AES key and IV to decrypt the ciphertext:
      ```python
      def aes_decrypt(encrypted_message, aes_key, iv):
          cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
@@ -203,31 +203,46 @@
      ```
 
 3. **Send Acknowledgment**:
+   -  - After successfully decrypting the message, the recipient **must** send an acknowledgment message to the sender via the server.
+   - The acknowledgment contains:
+     - **Recipient's identifier**.
+     - **Message ID** (the time that the message was sent).
+     - **Acknowledgment status** (e.g., "received").
 
-   - The server sends a confirmation response to the client, ensuring delivery.
+     ```json
+     {
+         "recipient_id": "<recipient's unique identifier>",
+         "message_id": "<unique message ID>",
+         "status": "received"
+     }
+     ```
+
+4. **Verify Acknowledgment** (Sender):
+   - Upon receiving the acknowledgment, the sender verifies that the acknowledgment corresponds to the message sent (by matching the `message_id`).
+   - The acknowledgment ensures that the message was successfully delivered and decrypted.
+
+---
 
 ### **Offline Delivery**
 
 1. If the recipient is offline:
-   - The server stores the encrypted message temporarily.
-   - When the the recipient reconnects, the server delivers the message to him.
+   - The server temporarily stores the encrypted message.
+   - Upon the recipient’s reconnection, the server delivers the message.
+       - This ensures that messages are not lost if the recipient is unavailable when the sender transmits them.
 
-   **Why?**
-   - This ensures that messages are not lost if the recipient is unavailable when the sender transmits them.
+2. After successful delivery:
+   - The server waits for the recipient's acknowledgment and confirms its receipt to the sender.
 
-2. The message is deleted from the server after successful delivery.
-
-   **Why?**
+3. The message and acknowledgment are deleted from the server after delivery and confirmation.
    - This minimizes the server's storage requirements and reduces the risk of exposing sensitive information if the server is compromised.
 
 ### **Security Features and Guarantees**
 
 | **Requirement**         | **Implementation with RSA**                                                      |
 |--------------------------|-----------------------------------------------------------------------------------|
-| **Confidentiality**      | Messages are encrypted using AES-256; AES keys are RSA-encrypted.                |
-| **Authentication**       | RSA ensures that only the the recipient can decrypt the AES key, confirming the recipient’s identity. |
-| **Integrity**            | Optional HMAC or MAC can be added to verify the message's authenticity and prevent tampering. |
-| **Resistance to MITM**   | RSA ensures that only the recipient with the private key can decrypt the AES key. |
-| **Offline Delivery**     | The server can store encrypted messages securely for offline recipients.          |
-
----
+| **Confidentiality**      | Messages are encrypted using AES-256; AES keys are RSA-2048 encrypted.                |
+| **Authentication**       | RSA ensures that only the the recipient can decrypt the AES key. |
+| **Integrity**            | AES encryption ensures that tampered ciphertext cannot be successfully decrypted. |
+| **Acknowledgment**       | Mandatory acknowledgment ensures message delivery and decryption confirmation.    |
+| **Resistance to MITM**   | RSA encryption prevents unauthorized decryption without the private key. |
+| **Offline Delivery**     | Server securely stores encrypted messages for offline recipients.          |
