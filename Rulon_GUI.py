@@ -411,7 +411,7 @@ class MessagesWindow(ctk.CTk):
 
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         plain_text = subject+content
-        recipient_public_key_pem = db.get_user_public_key(recipient_phone)
+        recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32) # for aes-256
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
