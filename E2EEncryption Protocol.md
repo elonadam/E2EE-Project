@@ -25,19 +25,16 @@
      - **Private Key**: Used to decrypt the AES key.
    - RSA keys are asymmetric, meaning the public key is shared with others while the private key remains secret.
 
-   **Why?**
-   - Asymmetric encryption allows for secure communication without needing a pre-shared secret. This is ideal for systems where the sender and recipient may not have direct contact to exchange a symmetric key securely.
-   - RSA keys are well-suited for encrypting small pieces of data (like an AES key).
+       - Asymmetric encryption allows for secure communication without needing a pre-shared secret. 
+       - RSA keys are well-suited for encrypting small pieces of data (like an AES key).
 
    **Client RSA Public Key**:
-   - During registration, each client sends their **public key** to the server over a secure channel.
+   - During registration, each client sends their public key to the server over a secure channel.
    - The server securely stores each client’s public key, indexed by their unique identifier.
 
-   **Why?**
-   - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when she needs to send a message.
-   - Storing only public keys on the server minimizes the risk of sensitive data leaks if the server is compromised.
+       - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when she needs to send a message.
+       - Storing only public keys on the server minimizes the risk of sensitive data leaks if the server is compromised.
 
-   - Example Code:
      ```python
      from cryptography.hazmat.primitives.asymmetric import rsa
      from cryptography.hazmat.primitives import serialization
@@ -57,7 +54,7 @@
      ```
   - **Client RSA Private Key**:
     - It is encrypted with AES-256 using a strong user-derived password.
-    - **Code Example for Secure Storage**:
+
       ```python
       from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
       from cryptography.hazmat.primitives import hashes
@@ -90,7 +87,7 @@
 - Before encrypting the message, the sender generates:
   1. A **random AES key** (256 bits).
   2. A **random Initialization Vector (IV)** (128 bits) for use with AES in CBC mode.
-   - Example Code:
+     
      ```python
      from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
      from cryptography.hazmat.primitives import padding
@@ -123,6 +120,7 @@
 2. **Encrypt the AES Key**:
 
    - The AES session key is encrypted with the the recipient’s public RSA key.
+     
      ```python
      from cryptography.hazmat.primitives.asymmetric import padding
      from cryptography.hazmat.primitives import hashes
@@ -139,10 +137,9 @@
          return encrypted
      encrypted_aes_key = rsa_encrypt_with_public_key(server_public_key, aes_key)
      ```
-
-    **Why?**
-    - RSA encryption ensures that only the the recipient (who has the corresponding private key) can decrypt the AES key.
-    - Encrypting the AES key allows both the sender and the recipient to securely use a symmetric encryption algorithm (AES) for the actual message, combining the efficiency of AES with the security of RSA.
+     
+        - RSA encryption ensures that only the the recipient (who has the corresponding private key) can decrypt the AES key.
+        - Encrypting the AES key allows both the sender and the recipient to securely use a symmetric encryption algorithm (AES) for the actual message, combining the efficiency of AES with the security of RSA.
 
 3. **Package the Encrypted Message**:
   - The sender creates a message package containing:
@@ -152,7 +149,6 @@
     - The **IV** (used for AES encryption of the message).
     - The **ciphertext** (the AES-encrypted message).
 
-  - Updated example of the message structure:
     ```json
     {
         "sender_public_key": "<the sender's public key>",
@@ -173,6 +169,7 @@
 1. **Decrypt the AES Key**:
 
    - The the recipient uses its private RSA key to decrypt the AES session key.
+     
      ```python
      def rsa_decrypt_with_private_key(private_key, encrypted_data):
          decrypted = private_key.decrypt(
@@ -190,6 +187,7 @@
 2. **Decrypt the Message**:
 
    - Use the decrypted AES key and IV to decrypt the ciphertext:
+     
      ```python
      def aes_decrypt(encrypted_message, aes_key, iv):
          cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
@@ -208,7 +206,7 @@
      - **Recipient's identifier**.
      - **Message ID** (the time that the message was sent).
      - **Acknowledgment status** (e.g., "received").
-
+       
      ```json
      {
          "recipient_id": "<recipient's unique identifier>",
@@ -234,7 +232,7 @@
    - The server waits for the recipient's acknowledgment and confirms its receipt to the sender.
 
 3. The message and acknowledgment are deleted from the server after delivery and confirmation.
-   - This minimizes the server's storage requirements and reduces the risk of exposing sensitive information if the server is compromised.
+       - This minimizes the server's storage requirements and reduces the risk of exposing sensitive information if the server is compromised.
 
 ### **Security Features and Guarantees**
 
