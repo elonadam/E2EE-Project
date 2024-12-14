@@ -356,29 +356,36 @@ class MessagesWindow(ctk.CTk):
         back_button.pack(pady=10, padx=5, anchor='e')
 
     def display_messages(self):
-        # Clear previous message frames if any
-        for widget in self.messages_frame.winfo_children():
-            widget.destroy()
+    for widget in self.messages_frame.winfo_children():
+        widget.destroy()
 
-        db = DatabaseManager()
-        messages = db.fetch_messages_for_user(self.phone)
-        for msg in messages:
-            sender, subject, content, date = msg
-            msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
-            msg_frame.pack(fill="x", pady=5)
+    db = DatabaseManager()
+    messages = db.fetch_messages_for_user(self.phone)
+    # Suppose each message returns: sender, subject, enc_aes_key, nonce, ciphertext, date
+    for msg in messages:
+        sender, subject, enc_aes_key, nonce, ciphertext, date = msg
 
-            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white",
-                                        fg_color="#1C1C1C", anchor="w")
-            sender_label.pack(fill="x", padx=5)
-            subject_label = ctk.CTkLabel(msg_frame, text=f"Subject: {subject}", text_color="white",
-                                         fg_color="#1C1C1C", anchor="w")
-            subject_label.pack(fill="x", padx=5)
-            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white",
-                                      fg_color="#1C1C1C", anchor="w")
-            date_label.pack(fill="x", padx=5)
-            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="white",
-                                         fg_color="#1C1C1C", anchor="w")
-            content_label.pack(fill="x", padx=5)
+        # Decrypt AES key using our private key
+        # Load your private key (stored securely, decrypted in memory)
+        aes_key = rsa_decrypt_aes_key(enc_aes_key, private_key_pem, passphrase=b"MyPass")
+
+        # Decrypt message
+        plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
+        content = plaintext_bytes.decode('utf-8')
+
+        # Display as before
+        msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
+        msg_frame.pack(fill="x", pady=5)
+        
+        sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white", fg_color="#1C1C1C", anchor="w")
+        sender_label.pack(fill="x", padx=5)
+        subject_label = ctk.CTkLabel(msg_frame, text=f"Subject: {subject}", text_color="white", fg_color="#1C1C1C", anchor="w")
+        subject_label.pack(fill="x", padx=5)
+        date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white", fg_color="#1C1C1C", anchor="w")
+        date_label.pack(fill="x", padx=5)
+        content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="white", fg_color="#1C1C1C", anchor="w")
+        content_label.pack(fill="x", padx=5)
+
 
     def send_message(self):
         recipient = self.recipient_var.get()
