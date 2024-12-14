@@ -76,8 +76,6 @@
           return salt, encrypted_private_key
       ```
 
-      - **Secure Enclave/Keychain**: Directly generate and store keys using platform APIs, ensuring the private key is non-exportable.
-
 #### **Message Exchange Phase**
 
 ##### **Sending a Message (Sender)**
