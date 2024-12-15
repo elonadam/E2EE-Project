@@ -231,6 +231,7 @@ class RegisterWindow(ctk.CTk):
 
             #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             private_key_pem, public_key_pem = generate_rsa_key_pair()
+            save_private_key(private_key_pem, phone)
             #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
@@ -363,11 +364,11 @@ class MessagesWindow(ctk.CTk):
         messages = db.fetch_messages_for_user(self.phone)
         # Suppose each message returns: sender, subject, enc_aes_key, nonce, ciphertext, date
         for msg in messages:
-            sender, subject, enc_aes_key, nonce, ciphertext, date = msg
+            sender, recipient, enc_aes_key, nonce, ciphertext, date, blue_v = msg
 
             # Decrypt AES key using our private key
             # Load your private key (stored securely, decrypted in memory)
-            aes_key = rsa_decrypt_aes_key(enc_aes_key, private_key_pem, passphrase=b"MyPass")
+            aes_key = rsa_decrypt_aes_key(enc_aes_key, load_private_key, passphrase=b"MyPass")
 
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
@@ -380,9 +381,11 @@ class MessagesWindow(ctk.CTk):
             sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white", fg_color="#1C1C1C",
                                         anchor="w")
             sender_label.pack(fill="x", padx=5)
+            """
             subject_label = ctk.CTkLabel(msg_frame, text=f"Subject: {subject}", text_color="white", fg_color="#1C1C1C",
                                          anchor="w")
             subject_label.pack(fill="x", padx=5)
+            """
             date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white", fg_color="#1C1C1C",
                                       anchor="w")
             date_label.pack(fill="x", padx=5)
@@ -410,14 +413,14 @@ class MessagesWindow(ctk.CTk):
         db = DatabaseManager()
 
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        plain_text = subject+content
+        plain_text = "Subject:/n"+subject+"/nContent:/n"+content
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32) # for aes-256
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
-            db.add_message(sender_num=self.phone, recipient_num=recipient, subject=subject, content=content)
+            db.add_message(sender_num=self.phone, recipient_num=recipient, encrypted_aes_key=enc_aes_key, ciphertext=ciphertext, iv=nonce)
             messagebox.showinfo("Success", "Message sent successfully!")
             # Optionally refresh the message list. If the user sends a message to themselves, they will see it.
             self.display_messages()

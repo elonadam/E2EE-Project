@@ -15,14 +15,4 @@ class Message:
         self.ciphertext = ciphertext 
         self.date = date
         self.iv = iv
-        self.blue_v = False
-        """
-                message_index INTEGER PRIMARY KEY AUTOINCREMENT,
-                sender_phone INTEGER,
-                recipient_phone INTEGER,
-                encrypted_aes_key TEXT,
-                ciphertext TEXT,
-                iv TEXT,
-                date TEXT,
-                blue_v BOOLEAN
-        """
+        self.blue_v = blue_v
