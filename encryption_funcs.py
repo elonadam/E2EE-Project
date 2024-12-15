@@ -107,10 +107,16 @@ def save_private_key(encrypted_private_key: bytes, user_phone: int):
     """
     This method saves the private key to safe file.
     """
+    # Define the directory path
+    directory = "private_keys"
+    
+    # Create the directory if it doesn't exist
+    os.makedirs(directory, exist_ok=True)
+    
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "wb") as f:
         f.write(encrypted_private_key)
-
+        
 def rsa_encrypt_aes_key(aes_key: bytes, recipient_public_key_pem: bytes) -> bytes:
     recipient_public_key = load_public_key(recipient_public_key_pem)
     enc_aes_key = recipient_public_key.encrypt(

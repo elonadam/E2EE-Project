@@ -18,7 +18,6 @@ COLOR_BUTTON_HOVER = "#001F3F"  # deep blue
 
 user_token_num = ()  # tuple for validation
 
-
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
@@ -362,10 +361,10 @@ class MessagesWindow(ctk.CTk):
 
         db = DatabaseManager()
         messages = db.fetch_messages_for_user(self.phone)
-        # Suppose each message returns: sender, subject, enc_aes_key, nonce, ciphertext, date
+        # Suppose each message returns: sender, recpient, enc_aes_key, nonce, ciphertext, date, blue_v
         for msg in messages:
-            sender, recipient, enc_aes_key, nonce, ciphertext, date, blue_v = msg
-
+            sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg #ERROR
+        
             # Decrypt AES key using our private key
             # Load your private key (stored securely, decrypted in memory)
             aes_key = rsa_decrypt_aes_key(enc_aes_key, load_private_key, passphrase=b"MyPass")
@@ -424,7 +423,7 @@ class MessagesWindow(ctk.CTk):
             messagebox.showinfo("Success", "Message sent successfully!")
             # Optionally refresh the message list. If the user sends a message to themselves, they will see it.
             self.display_messages()
-
+            
             # Clear the fields after sending
             self.recipient_var.set("")
             self.subject_var.set("")

@@ -72,7 +72,6 @@ class DatabaseManager:
         :param encrypted_aes_key:
         :param ciphertext:
         :param iv:
-        :param blue_v:
         :return:
         """
         curr_timestamp = datetime.now().strftime(" %H:%M:%S %d-%m-%Y")  # str type,output = 10:37:46 07-12-2024
