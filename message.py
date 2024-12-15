@@ -6,13 +6,15 @@ class Message:
     represent a single message
     """
 
-    def __init__(self, sender_phone, recipient_phone, subject, content, date, blue_v):
+    def __init__ (self, sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, date, blue_v):
+         
 
-        self.sender_phone = int(sender_phone)
-        self.recipient_phone = int(recipient_phone)
-        self.subject = subject
-        self.content = content or ""  # can send only subject
-        self.date = ""
+        self.sender_num = int(sender_num)
+        self.recipient_num = int(recipient_num)
+        self.encrypted_aes_key = encrypted_aes_key
+        self.ciphertext = ciphertext 
+        self.date = date
+        self.iv = iv
         self.blue_v = False
         """
                 message_index INTEGER PRIMARY KEY AUTOINCREMENT,

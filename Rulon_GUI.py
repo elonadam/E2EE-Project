@@ -230,11 +230,11 @@ class RegisterWindow(ctk.CTk):
             db = DatabaseManager()
 
             #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            private_key_pem, public_key_pem = generate_rsa_key_pair(passphrase=b"my_pass")
+            private_key_pem, public_key_pem = generate_rsa_key_pair()
             #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
-            db.add_user(user_phone=phone, public_key="", user_pw=hashed_pw.decode())
+            db.add_user(user_phone=phone, public_key=public_key_pem, user_pw=hashed_pw.decode())
             messagebox.showinfo("Registered", "Registration successful! You can now login.")
             self.destroy()
             start_win = StartWindow()

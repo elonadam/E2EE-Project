@@ -86,14 +86,30 @@ def generate_rsa_key_pair(passphrase: bytes = None):  # what does it means
 
     return private_key_pem, public_key_pem
 
-
 def load_public_key(public_key_pem: bytes):
-    return serialization.load_pem_public_key(public_key_pem, backend=default_backend())
+    if isinstance(public_key_pem, tuple):  # Ensure it's not a tuple
+        public_key_pem = public_key_pem[0]
+    if isinstance(public_key_pem, str):  # Convert string to bytes
+        public_key_pem = public_key_pem.encode('utf-8')
+        
+    try:
+        return serialization.load_pem_public_key(public_key_pem, backend=default_backend())
+    except Exception as e:
+        raise ValueError(f"Error loading public key: {e}")
 
+def load_private_key(user_phone: int):
+    filename = f"private_keys/{user_phone}_private_key.pem.enc"
+    with open(filename, "rb") as f:
+        encrypted_private_key = f.read()
+    return encrypted_private_key
 
-def load_private_key(private_key_pem: bytes, passphrase: bytes = None):
-    return serialization.load_pem_private_key(private_key_pem, password=passphrase, backend=default_backend())
-
+def save_private_key(encrypted_private_key: bytes, user_phone: int):
+    """
+    This method saves the private key to safe file.
+    """
+    filename = f"private_keys/{user_phone}_private_key.pem.enc"
+    with open(filename, "wb") as f:
+        f.write(encrypted_private_key)
 
 def rsa_encrypt_aes_key(aes_key: bytes, recipient_public_key_pem: bytes) -> bytes:
     recipient_public_key = load_public_key(recipient_public_key_pem)
@@ -120,22 +136,24 @@ def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_private_key_pem: bytes, pa
     )
     return aes_key
 
-
-def encrypt_message_with_aes(aes_key: bytes, plaintext: bytes):
+def encrypt_message_with_aes(aes_key, plaintext):
     """
     Encrypt plaintext using AES-GCM.
-
-    :return: (nonce, ciphertext, tag)
+    :return: (nonce, ciphertext)
     """
+    if isinstance(plaintext, str):  # Convert string to bytes if necessary
+        plaintext = plaintext.encode('utf-8')
+        
     aesgcm = AESGCM(aes_key)
-    nonce = os.urandom(12)  # GCM recommends 96-bit (12-byte) nonce
+    nonce = os.urandom(12)  # 96-bit nonce
     ciphertext = aesgcm.encrypt(nonce, plaintext, None)
     # AESGCM combines tag into the ciphertext internally, but you can separate if needed.
     # In AESGCM from cryptography, the tag is appended to the ciphertext automatically.
     return nonce, ciphertext
 
-
 def decrypt_message_with_aes(aes_key: bytes, nonce: bytes, ciphertext: bytes) -> bytes:
     aesgcm = AESGCM(aes_key)
-    plaintext = aesgcm.decrypt(nonce, ciphertext, None)
-    return plaintext
+    try:
+        return aesgcm.decrypt(nonce, ciphertext, None)
+    except Exception as e:
+        raise ValueError(f"Decryption failed: {e}")

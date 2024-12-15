@@ -6,7 +6,7 @@
 
 - **RSA-2048**:
   - **Purpose**: Used for secure key exchange.
-  - **Why RSA-2048?**: Provides strong security against modern computational capabilities while balancing performance.
+  - **Why RSA-2048?**: RSA-1024 is too weak, while RSA-3072 is quite slow and often overkill for most applications, making RSA-2048 the preferred choice for balancing security and performance in this case.
   - **Usage**: Encrypts AES session keys.
 
 - **AES-256**:
