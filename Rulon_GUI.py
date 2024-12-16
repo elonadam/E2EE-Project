@@ -367,7 +367,8 @@ class MessagesWindow(ctk.CTk):
         
             # Decrypt AES key using our private key
             # Load your private key (stored securely, decrypted in memory)
-            aes_key = rsa_decrypt_aes_key(enc_aes_key, load_private_key, passphrase=b"MyPass")
+            # aes_key = rsa_decrypt_aes_key(enc_aes_key, load_private_key, passphrase=b"MyPass")
+            aes_key = rsa_decrypt_aes_key(enc_aes_key, self.phone)
 
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
