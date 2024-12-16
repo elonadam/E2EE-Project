@@ -52,11 +52,10 @@ def verify_password_bcrypt(password, hashed):
     return bcrypt.checkpw(password.encode(), hashed)
 
 
-def generate_rsa_key_pair(passphrase: bytes = None):  # what does it means
+def generate_rsa_key_pair(passphrase: bytes = None):  # we can delete param i think
     """
     Generate an RSA private/public key pair.
 
-    :param passphrase: Optional passphrase to encrypt the private key. If None, the private key is not encrypted.
     :return: (private_key_pem, public_key_pem)
     """
     private_key = rsa.generate_private_key(
@@ -65,7 +64,7 @@ def generate_rsa_key_pair(passphrase: bytes = None):  # what does it means
         backend=default_backend()
     )
 
-    # Serialize private key
+    # Serialize private key TODO 3 if not using passprase delete this
     if passphrase:
         encryption_algo = BestAvailableEncryption(passphrase)
     else:
@@ -86,22 +85,26 @@ def generate_rsa_key_pair(passphrase: bytes = None):  # what does it means
 
     return private_key_pem, public_key_pem
 
+
 def load_public_key(public_key_pem: bytes):
     if isinstance(public_key_pem, tuple):  # Ensure it's not a tuple
         public_key_pem = public_key_pem[0]
     if isinstance(public_key_pem, str):  # Convert string to bytes
         public_key_pem = public_key_pem.encode('utf-8')
-        
+
     try:
         return serialization.load_pem_public_key(public_key_pem, backend=default_backend())
     except Exception as e:
         raise ValueError(f"Error loading public key: {e}")
 
+
 def load_private_key(user_phone: int):
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "rb") as f:
         encrypted_private_key = f.read()
+        print(f"inside load prive key: loaded {encrypted_private_key} and this type is {type(encrypted_private_key)}")
     return encrypted_private_key
+
 
 def save_private_key(encrypted_private_key: bytes, user_phone: int):
     """
@@ -109,14 +112,15 @@ def save_private_key(encrypted_private_key: bytes, user_phone: int):
     """
     # Define the directory path
     directory = "private_keys"
-    
+
     # Create the directory if it doesn't exist
     os.makedirs(directory, exist_ok=True)
-    
+
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "wb") as f:
         f.write(encrypted_private_key)
-        
+
+
 def rsa_encrypt_aes_key(aes_key: bytes, recipient_public_key_pem: bytes) -> bytes:
     recipient_public_key = load_public_key(recipient_public_key_pem)
     enc_aes_key = recipient_public_key.encrypt(
@@ -130,17 +134,33 @@ def rsa_encrypt_aes_key(aes_key: bytes, recipient_public_key_pem: bytes) -> byte
     return enc_aes_key
 
 
-def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_private_key_pem: bytes, passphrase: bytes = None) -> bytes:
-    recipient_private_key = load_private_key(recipient_private_key_pem, passphrase)
-    aes_key = recipient_private_key.decrypt(
-        enc_aes_key,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
+# def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_private_key_pem: bytes, passphrase: bytes = None) -> bytes:
+def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_phone):
+    # recipient_private_key = load_private_key(recipient_private_key_pem, passphrase)
+    # load enc private key from file
+    recipient_private_key = load_private_key(recipient_phone)
+    try:
+        # load the private key
+        private_key = serialization.load_pem_private_key(
+            recipient_private_key,
+            password=None,
+            backend=default_backend()
         )
-    )
-    return aes_key
+
+        #  decrypt the aes key using private key
+        aes_key = private_key.decrypt(
+            enc_aes_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        return aes_key
+
+    except Exception as e:
+        raise ValueError(f"Error decrypting AES key: {e}")
+
 
 def encrypt_message_with_aes(aes_key, plaintext):
     """
@@ -149,13 +169,14 @@ def encrypt_message_with_aes(aes_key, plaintext):
     """
     if isinstance(plaintext, str):  # Convert string to bytes if necessary
         plaintext = plaintext.encode('utf-8')
-        
+
     aesgcm = AESGCM(aes_key)
     nonce = os.urandom(12)  # 96-bit nonce
     ciphertext = aesgcm.encrypt(nonce, plaintext, None)
     # AESGCM combines tag into the ciphertext internally, but you can separate if needed.
     # In AESGCM from cryptography, the tag is appended to the ciphertext automatically.
     return nonce, ciphertext
+
 
 def decrypt_message_with_aes(aes_key: bytes, nonce: bytes, ciphertext: bytes) -> bytes:
     aesgcm = AESGCM(aes_key)
