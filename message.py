@@ -7,8 +7,6 @@ class Message:
     """
 
     def __init__ (self, sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, date, blue_v):
-         
-
         self.sender_num = int(sender_num)
         self.recipient_num = int(recipient_num)
         self.encrypted_aes_key = encrypted_aes_key
