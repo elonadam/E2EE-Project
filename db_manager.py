@@ -99,8 +99,11 @@ class DatabaseManager:
         return row is not None and row[0] == password
 
     def fetch_messages_for_user(self, user_phone):
-        self.c.execute("SELECT sender_phone, encrypted_aes_key, ciphertext, iv, date FROM messages WHERE recipient_phone=?", 
-                        (user_phone,))
+        # self.c.execute("SELECT sender_phone, encrypted_aes_key, ciphertext, iv, date FROM messages WHERE recipient_phone=?",
+        #                 (user_phone,))
+        self.c.execute(
+            "SELECT sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, blue_v FROM messages WHERE recipient_phone=?",
+            (user_phone,))
         return self.c.fetchall()
 
     def get_user(self, phone):
