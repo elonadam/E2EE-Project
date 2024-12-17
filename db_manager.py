@@ -102,7 +102,7 @@ class DatabaseManager:
         # self.c.execute("SELECT sender_phone, encrypted_aes_key, ciphertext, iv, date FROM messages WHERE recipient_phone=?",
         #                 (user_phone,))
         self.c.execute(
-            "SELECT sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, blue_v FROM messages WHERE recipient_phone=?",
+            "SELECT sender_phone, recipient_phone, encrypted_aes_key, iv, ciphertext, date, blue_v FROM messages WHERE recipient_phone=?",
             (user_phone,))
         return self.c.fetchall()
 
