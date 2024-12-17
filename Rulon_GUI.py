@@ -378,7 +378,7 @@ class MessagesWindow(ctk.CTk):
             msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
             msg_frame.pack(fill="x", pady=5)
 
-            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white", fg_color="#1C1C1C",
+            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="black", fg_color="#1C1C1C",
                                         anchor="w")
             sender_label.pack(fill="x", padx=5)
             """
@@ -386,10 +386,10 @@ class MessagesWindow(ctk.CTk):
                                          anchor="w")
             subject_label.pack(fill="x", padx=5)
             """
-            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white", fg_color="#1C1C1C",
+            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="black", fg_color="#1C1C1C",
                                       anchor="w")
             date_label.pack(fill="x", padx=5)
-            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="white", fg_color="#1C1C1C",
+            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="black", fg_color="#1C1C1C",
                                          anchor="w")
             content_label.pack(fill="x", padx=5)
 
