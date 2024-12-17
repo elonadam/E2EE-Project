@@ -164,6 +164,7 @@ def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_phone):
 
 def encrypt_message_with_aes(aes_key, plaintext):
     """
+    ciphertext = aesgcm.encrypt(nonce, plaintext, None)
     Encrypt plaintext using AES-GCM.
     :return: (nonce, ciphertext)
     """
