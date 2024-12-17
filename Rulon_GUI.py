@@ -361,7 +361,7 @@ class MessagesWindow(ctk.CTk):
 
         db = DatabaseManager()
         messages = db.fetch_messages_for_user(self.phone)
-        # Suppose each message returns: sender, recpient, enc_aes_key, nonce, ciphertext, date, blue_v
+        # Suppose each message returns: sender, recipient, enc_aes_key, nonce, ciphertext, date, blue_v
         for msg in messages:
             sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg #ERROR
         
