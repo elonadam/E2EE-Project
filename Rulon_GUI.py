@@ -14,9 +14,8 @@ ctk.set_default_color_theme("blue")  # The built-in theme
 COLOR_BG = "#0C0C0C"  # obsidian black
 COLOR_ENTRY = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON = "#A9ACB6"  # aluminum gray
-COLOR_BUTTON_HOVER = "#001F3F"  # deep blue
+COLOR_BUTTON_HOVER = "#800020"  # burgundy
 
-user_token_num = ()  # tuple for validation
 
 def print_auth_token(phone):
     # print token to terminal (for testing)
@@ -120,13 +119,13 @@ class RegisterWindow(ctk.CTk):
         self.validate_token_button.pack(pady=5)
 
         # Timer label
-        self.timer_label = ctk.CTkLabel(self, text="", text_color="white", fg_color=COLOR_BG)
+        self.timer_label = ctk.CTkLabel(self, text="", text_color="white", fg_color=COLOR_BG, corner_radius=15)
         self.timer_label.pack(pady=10)
 
-        self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG)
+        self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG, corner_radius=15)
         self.password_entry = ctk.CTkEntry(self, textvariable=self.password_var, fg_color=COLOR_ENTRY, show="*")
         self.set_pw_button = ctk.CTkButton(self, text="Set Password", fg_color=COLOR_BUTTON,
-                                           hover_color=COLOR_BUTTON_HOVER, command=self.set_password)
+                                           hover_color=COLOR_BUTTON_HOVER, corner_radius=15, command=self.set_password)
 
     def update_timer(self):
         if self.time_left > 0:
