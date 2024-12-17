@@ -109,7 +109,7 @@ def load_private_key(user_phone: int):
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "rb") as f:
         encrypted_private_key = f.read()
-        print(f"inside load prive key: loaded {encrypted_private_key} and this type is {type(encrypted_private_key)}")
+        print(f"inside load private key: loaded {encrypted_private_key} and this type is {type(encrypted_private_key)}")
     return encrypted_private_key
 
 
