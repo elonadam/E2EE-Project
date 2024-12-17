@@ -16,6 +16,7 @@ COLOR_ENTRY = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
 
+user_token_num = ()  # tuple for validation
 
 def print_auth_token(phone):
     # print token to terminal (for testing)
@@ -172,7 +173,7 @@ class RegisterWindow(ctk.CTk):
         self.token_entry.configure(state="normal")
         self.validate_token_button.configure(state="normal")
         if not phone.startswith("5"):
-            messagebox.showerror("Error", "Please enter a phone number.")  # entered null
+            messagebox.showerror("Error", "Please enter a phone number starting with 5.")
             return
 
         db = DatabaseManager()
@@ -419,6 +420,8 @@ class MessagesWindow(ctk.CTk):
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
+            if enc_aes_key is None:
+                return None
             db.add_message(sender_num=self.phone, recipient_num=recipient, encrypted_aes_key=enc_aes_key, ciphertext=ciphertext, iv=nonce)
             messagebox.showinfo("Success", "Message sent successfully!")
             # Optionally refresh the message list. If the user sends a message to themselves, they will see it.
@@ -430,6 +433,7 @@ class MessagesWindow(ctk.CTk):
             self.content_var.set("")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
+            return None
 
     def back_to_start(self):
         self.destroy()
