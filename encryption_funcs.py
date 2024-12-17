@@ -1,6 +1,8 @@
 # import hashlib
 # import secrets
 import os
+from tkinter import messagebox
+
 import bcrypt
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
@@ -95,18 +97,23 @@ def load_public_key(public_key_pem: bytes):
     try:
         return serialization.load_pem_public_key(public_key_pem, backend=default_backend())
     except Exception as e:
-        raise ValueError(f"Error loading public key: {e}")
+        # Display the message box instead of raising an error
+        messagebox.showerror(
+            title="Error",
+            message="Cannot send message to unregister phone number."
+        )
+        return None
 
 
 def load_private_key(user_phone: int):
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "rb") as f:
         encrypted_private_key = f.read()
-        print(f"inside load prive key: loaded {encrypted_private_key} and this type is {type(encrypted_private_key)}")
+        print(f"inside load private key: loaded {encrypted_private_key} and this type is {type(encrypted_private_key)}")
     return encrypted_private_key
 
 
-def save_private_key(encrypted_private_key: bytes, user_phone: int):
+def save_private_key(encrypted_private_key, user_phone):
     """
     This method saves the private key to safe file.
     """
@@ -121,17 +128,20 @@ def save_private_key(encrypted_private_key: bytes, user_phone: int):
         f.write(encrypted_private_key)
 
 
-def rsa_encrypt_aes_key(aes_key: bytes, recipient_public_key_pem: bytes) -> bytes:
-    recipient_public_key = load_public_key(recipient_public_key_pem)
-    enc_aes_key = recipient_public_key.encrypt(
-        aes_key,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
+def rsa_encrypt_aes_key(aes_key, recipient_public_key_pem):
+    try:
+        recipient_public_key = load_public_key(recipient_public_key_pem)
+        enc_aes_key = recipient_public_key.encrypt(
+            aes_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
         )
-    )
-    return enc_aes_key
+        return enc_aes_key
+    except Exception as e:
+        return None
 
 
 # def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_private_key_pem: bytes, passphrase: bytes = None) -> bytes:

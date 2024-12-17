@@ -14,7 +14,7 @@ ctk.set_default_color_theme("blue")  # The built-in theme
 COLOR_BG = "#0C0C0C"  # obsidian black
 COLOR_ENTRY = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON = "#A9ACB6"  # aluminum gray
-COLOR_BUTTON_HOVER = "#001F3F"  # deep blue
+COLOR_BUTTON_HOVER = "#800020"  # burgundy
 
 user_token_num = ()  # tuple for validation
 
@@ -120,13 +120,13 @@ class RegisterWindow(ctk.CTk):
         self.validate_token_button.pack(pady=5)
 
         # Timer label
-        self.timer_label = ctk.CTkLabel(self, text="", text_color="white", fg_color=COLOR_BG)
+        self.timer_label = ctk.CTkLabel(self, text="", text_color="white", fg_color=COLOR_BG, corner_radius=15)
         self.timer_label.pack(pady=10)
 
-        self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG)
+        self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG, corner_radius=15)
         self.password_entry = ctk.CTkEntry(self, textvariable=self.password_var, fg_color=COLOR_ENTRY, show="*")
         self.set_pw_button = ctk.CTkButton(self, text="Set Password", fg_color=COLOR_BUTTON,
-                                           hover_color=COLOR_BUTTON_HOVER, command=self.set_password)
+                                           hover_color=COLOR_BUTTON_HOVER, corner_radius=15, command=self.set_password)
 
     def update_timer(self):
         if self.time_left > 0:
@@ -173,7 +173,7 @@ class RegisterWindow(ctk.CTk):
         self.token_entry.configure(state="normal")
         self.validate_token_button.configure(state="normal")
         if not phone.startswith("5"):
-            messagebox.showerror("Error", "Please enter a phone number.")  # entered null
+            messagebox.showerror("Error", "Please enter a phone number starting with 5.")
             return
 
         db = DatabaseManager()
@@ -378,7 +378,7 @@ class MessagesWindow(ctk.CTk):
             msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
             msg_frame.pack(fill="x", pady=5)
 
-            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="white", fg_color="#1C1C1C",
+            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="black", fg_color="#1C1C1C",
                                         anchor="w")
             sender_label.pack(fill="x", padx=5)
             """
@@ -386,10 +386,10 @@ class MessagesWindow(ctk.CTk):
                                          anchor="w")
             subject_label.pack(fill="x", padx=5)
             """
-            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="white", fg_color="#1C1C1C",
+            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="black", fg_color="#1C1C1C",
                                       anchor="w")
             date_label.pack(fill="x", padx=5)
-            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="white", fg_color="#1C1C1C",
+            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="black", fg_color="#1C1C1C",
                                          anchor="w")
             content_label.pack(fill="x", padx=5)
 
@@ -420,6 +420,8 @@ class MessagesWindow(ctk.CTk):
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
+            if enc_aes_key is None:
+                return None
             db.add_message(sender_num=self.phone, recipient_num=recipient, encrypted_aes_key=enc_aes_key, ciphertext=ciphertext, iv=nonce)
             messagebox.showinfo("Success", "Message sent successfully!")
             # Optionally refresh the message list. If the user sends a message to themselves, they will see it.
@@ -431,6 +433,7 @@ class MessagesWindow(ctk.CTk):
             self.content_var.set("")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
+            return None
 
     def back_to_start(self):
         self.destroy()
