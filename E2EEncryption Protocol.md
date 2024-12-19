@@ -15,6 +15,60 @@
   - **Usage**: Encrypts the actual message content using a session key.
 ---
 
+### **Database Integration: SQLite**
+
+#### **Purpose of the Database**
+
+The server uses an **SQLite database** to securely store and manage client data, including public keys, messages, and acknowledgment flags. SQLite is a lightweight, file-based database ideal for applications with low to moderate concurrent usage, such as a messaging server.
+
+- **Lightweight**: SQLite requires no separate server process, making it easy to integrate into a small-scale messaging application.  
+- **File-Based**: All data is stored in a single `.db` file, simplifying deployment and management.  
+- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity.  
+
+---
+
+### **SQLite Schema**
+
+The database includes the following tables:
+
+1. **Users Table**  
+   - **Purpose**: Stores client public keys for secure RSA key exchange.  
+
+   ```sql
+   CREATE TABLE users (
+        user_phone INTEGER PRIMARY KEY,
+        public_key TEXT,
+        user_pw VARCHAR(100)
+   );
+   ```
+   - `user_phone`: A unique identifier for each client (in our case, their phone number).  
+   - `public_key`: The client’s RSA public key.
+   - `user_pw`: The client’s hashed password.
+
+2. **Messages Table**  
+   - **Purpose**: Temporarily stores encrypted messages for offline delivery.  
+
+   ```sql
+    CREATE TABLE IF NOT EXISTS messages (
+        message_index INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_phone INTEGER,
+        recipient_phone INTEGER,
+        encrypted_aes_key TEXT,
+        ciphertext TEXT,
+        iv TEXT,
+        date TEXT,
+        blue_v BOOLEAN
+    );
+   ```
+   - `message_index`: Unique identifier for each row in the table.  
+   - `sender_phone`: Unique identifier of the message sender.  
+   - `recipient_phone`: Unique identifier of the message recipient.  
+   - `encrypted_aes_key`: RSA-encrypted AES session key.  
+   - `ciphertext`: The AES-encrypted message content.  
+   - `iv`: Initialization Vector used for AES encryption.  
+   - `date`: Automatically logs when the message was stored.
+   - `blue_v`: The delivery confirmation.
+
 ### **Protocol Workflow**
 
 #### **Registration Phase**
@@ -25,56 +79,18 @@
      - **Private Key**: Used to decrypt the AES key.
    - RSA keys are asymmetric, meaning the public key is shared with others while the private key remains secret.
 
-       - Asymmetric encryption allows for secure communication without needing a pre-shared secret. 
-       - RSA keys are well-suited for encrypting small pieces of data (like an AES key).
+    - Asymmetric encryption allows for secure communication without needing a pre-shared secret. This is ideal for systems where the sender and recipient may not have direct contact to exchange a symmetric key securely.
+    - RSA keys are well-suited for encrypting small pieces of data (like an AES key).
 
    **Client RSA Public Key**:
    - During registration, each client sends their public key to the server over a secure channel.
-   - The server securely stores each client’s public key, indexed by their unique identifier.
+   - The server securely stores each client’s public key, indexed by their unique identifier. QQrefernce where in table
 
        - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when she needs to send a message.
        - Storing only public keys on the server minimizes the risk of sensitive data leaks if the server is compromised.
 
-     ```python
-     from cryptography.hazmat.primitives.asymmetric import rsa
-     from cryptography.hazmat.primitives import serialization
-
-     def generate_rsa_keypair():
-         private_key = rsa.generate_private_key(
-             public_exponent=65537,
-             key_size=2048
-         )
-         public_key = private_key.public_key()
-
-         return {
-             "private_key": private_key,
-             "public_key": public_key
-         }
-     client_keys = generate_rsa_keypair()
-     ```
   - **Client RSA Private Key**:
-    - It is encrypted with AES-256 using a strong user-derived password.
-
-      ```python
-      from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-      from cryptography.hazmat.primitives import hashes
-      from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-      import os
-
-      def encrypt_private_key(private_key_pem, password):
-          salt = os.urandom(16)
-          kdf = PBKDF2HMAC(
-              algorithm=hashes.SHA256(),
-              length=32,
-              salt=salt,
-              iterations=100000
-          )
-          encryption_key = kdf.derive(password.encode())
-          cipher = Cipher(algorithms.AES(encryption_key), modes.CFB(os.urandom(16)))
-          encryptor = cipher.encryptor()
-          encrypted_private_key = encryptor.update(private_key_pem) + encryptor.finalize()
-          return salt, encrypted_private_key
-      ```
+    - It is encrypted with AES-256 using a strong user-derived password and stored locally.
 
 #### **Message Exchange Phase**
 
@@ -84,58 +100,13 @@
 
 - Before encrypting the message, the sender generates:
   1. A **random AES key** (256 bits).
-  2. A **random Initialization Vector (IV)** (128 bits) for use with AES in CBC mode.
+  2. A **random Initialization Vector (IV)** (128 bits) for use with AES in GCM mode.
      
-     ```python
-     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-     from cryptography.hazmat.primitives import padding
-     import os
-
-     def generate_aes_key():
-         return os.urandom(32)  # 256-bit key
-     aes_key = generate_aes_key()
-    
-     def aes_encrypt(message, aes_key):
-         iv = os.urandom(16)
-         cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
-         encryptor = cipher.encryptor()
-
-         padder = padding.PKCS7(128).padder()
-         padded_message = padder.update(message) + padder.finalize()
-         ciphertext = encryptor.update(padded_message) + encryptor.finalize()
-
-         return {
-             "ciphertext": ciphertext,
-             "iv": iv
-         }
-    ```
-
-     - The sender encrypts the actual message using AES and the random AES key:
-    ```plaintext
-    ciphertext = AES_Encrypt(message, AES_key, IV)
-    ```
+     - The sender encrypts the actual message using AES and the IV.
 
 2. **Encrypt the AES Key**:
 
    - The AES session key is encrypted with the the recipient’s public RSA key.
-     
-     ```python
-     from cryptography.hazmat.primitives.asymmetric import padding
-     from cryptography.hazmat.primitives import hashes
-
-     def rsa_encrypt_with_public_key(public_key, data):
-         encrypted = public_key.encrypt(
-             data,
-             padding.OAEP(
-                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                 algorithm=hashes.SHA256(),
-                 label=None
-             )
-         )
-         return encrypted
-     encrypted_aes_key = rsa_encrypt_with_public_key(server_public_key, aes_key)
-     ```
-     
         - RSA encryption ensures that only the the recipient (who has the corresponding private key) can decrypt the AES key.
         - Encrypting the AES key allows both the sender and the recipient to securely use a symmetric encryption algorithm (AES) for the actual message, combining the efficiency of AES with the security of RSA.
 
@@ -144,16 +115,18 @@
     - The **sender's public key** (for recipient verification).
     - The **recipient's public key** (recipient's public key).
     - The **encrypted AES key** (RSA-encrypted with the recipient's public key).
-    - The **IV** (used for AES encryption of the message).
     - The **ciphertext** (the AES-encrypted message - includes the subject and content).
+    - The **IV** (used for AES encryption of the message).
+    - The **delivery confirmation** (message received flag)
 
     ```json
     {
-        "sender_public_key": "<the sender's public key>",
-        "recipient_public_key": "<recipient's public key>",
+        "sender_public_key": "<Sender's public key>",
+        "recipient_public_key": "<Recipient's public key>",
         "encrypted_aes_key": "<RSA-encrypted AES key>",
+        "ciphertext": "<AES-encrypted message>",
         "iv": "<Initialization Vector>",
-        "ciphertext": "<AES-encrypted message>"
+        "blue_v": "<Message received flag>"
     }
     ```
     
@@ -166,37 +139,14 @@
 
 1. **Decrypt the AES Key**:
 
-   - The the recipient uses its private RSA key to decrypt the AES session key.
-     
-     ```python
-     def rsa_decrypt_with_private_key(private_key, encrypted_data):
-         decrypted = private_key.decrypt(
-             encrypted_data,
-             padding.OAEP(
-                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                 algorithm=hashes.SHA256(),
-                 label=None
-             )
-         )
-         return decrypted
-     aes_key = rsa_decrypt_with_private_key(server_private_key, encrypted_aes_key)
-     ```
+    -  The recipient receives the package and extracts the encrypted AES key.
+    - Then he decrypts the AES key using his private RSA key:
+    - Only the recipient has access to his RSA private key, ensuring that only he can decrypt the AES key and, consequently, the message.
 
 2. **Decrypt the Message**:
 
-   - Use the decrypted AES key and IV to decrypt the ciphertext:
-     
-     ```python
-     def aes_decrypt(encrypted_message, aes_key, iv):
-         cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))
-         decryptor = cipher.decryptor()
-
-         unpadder = padding.PKCS7(128).unpadder()
-         padded_message = decryptor.update(encrypted_message) + decryptor.finalize()
-         message = unpadder.update(padded_message) + unpadder.finalize()
-         return message
-     message = aes_decrypt(encrypted_message["ciphertext"], aes_key, encrypted_message["iv"])
-     ```
+   - The server decrypts the message using the AES key and IV.
+      - Decrypting the message with AES is efficient and ensures that the original plaintext message is retrieved securely.
 
 3. **Send Acknowledgment**:
    - After successfully decrypting the message, the recipient must send an acknowledgment message to the sender via the server.
@@ -219,7 +169,7 @@
 
 ---
 
-### **Offline Delivery**
+### **Offline Delivery** QQnot relevent?
 
 1. If the recipient is offline:
    - The server temporarily stores the encrypted message.
@@ -237,8 +187,19 @@
 | **Requirement**         | **Implementation with RSA**                                                      |
 |--------------------------|-----------------------------------------------------------------------------------|
 | **Confidentiality**      | Messages are encrypted using AES-256; AES keys are RSA-2048 encrypted.                |
-| **Authentication**       | RSA ensures that only the the recipient can decrypt the AES key. |
+| **Authentication**       | RRSA ensures that only the the recipient can decrypt the AES key, confirming the recipient’s identity. |
 | **Integrity**            | AES encryption ensures that tampered ciphertext cannot be successfully decrypted. |
 | **Acknowledgment**       | Mandatory acknowledgment ensures message delivery and decryption confirmation.    |
 | **Resistance to MITM**   | RSA encryption prevents unauthorized decryption without the private key. |
 | **Offline Delivery**     | Server securely stores encrypted messages for offline recipients.          |
+
+
+הנחות:
+מספר טלפון חייב להתחיל ב5.
+
+[05:50, 18/12/2024] Elon Adam: אפשר לציין בפרוטוקול שאנחנו מבצעים עוד שלב הגנה מפני התקפות על ידי שימוש ב placeholder של סימן שאלה בתוך השאילתות sql במקום לבצע השמה ישירה, זאת כדי למנוע sql injection
+[05:51, 18/12/2024] Elon Adam: זה למשל קוד לא מוגן
+
+# Dangerous and prone to SQL injection
+user_input = "example_user"
+cursor.execute("SELECT * FROM users WHERE username = '" + user_input + "'")
