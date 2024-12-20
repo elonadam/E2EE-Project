@@ -23,7 +23,8 @@ The server uses an **SQLite database** to securely store and manage client data,
 
 - **Lightweight**: SQLite requires no separate server process, making it easy to integrate into a small-scale messaging application.  
 - **File-Based**: All data is stored in a single `.db` file, simplifying deployment and management.  
-- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity.  
+- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity. 
+- **Security**: To prevent SQL injection, placeholders (e.g., '?') are used in place of variable names.
 
 ---
 
@@ -196,10 +197,3 @@ The database includes the following tables:
 
 הנחות:
 מספר טלפון חייב להתחיל ב5.
-
-[05:50, 18/12/2024] Elon Adam: אפשר לציין בפרוטוקול שאנחנו מבצעים עוד שלב הגנה מפני התקפות על ידי שימוש ב placeholder של סימן שאלה בתוך השאילתות sql במקום לבצע השמה ישירה, זאת כדי למנוע sql injection
-[05:51, 18/12/2024] Elon Adam: זה למשל קוד לא מוגן
-
-# Dangerous and prone to SQL injection
-user_input = "example_user"
-cursor.execute("SELECT * FROM users WHERE username = '" + user_input + "'")
