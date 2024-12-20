@@ -19,56 +19,87 @@
 
 #### **Purpose of the Database**
 
-The server uses an **SQLite database** to securely store and manage client data, including public keys, messages, and acknowledgment flags. SQLite is a lightweight, file-based database ideal for applications with low to moderate concurrent usage, such as a messaging server.
+The server uses an **SQLite database** to securely store and manage client data, including public keys, user credentials, messages, and acknowledgment flags. SQLite is a lightweight, file-based database ideal for applications with low to moderate concurrent usage, such as a messaging server.
 
 - **Lightweight**: SQLite requires no separate server process, making it easy to integrate into a small-scale messaging application.  
-- **File-Based**: All data is stored in a single `.db` file, simplifying deployment and management.  
-- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity.
+- **File-Based**: All data is stored in a single `data.db` file, simplifying deployment and management.  
+- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity. 
 - **Security**: To prevent SQL injection, placeholders (e.g., '?') are used in place of variable names.
 
 ---
 
-### **SQLite Schema**
+### **SQLite Schema and Data Storage**
 
 The database includes the following tables:
 
-1. **Users Table**  
-   - **Purpose**: Stores client public keys for secure RSA key exchange.  
+#### **1. Users Table**  
+**Purpose**: Stores client public keys, hashed passwords, and phone numbers for authentication and secure RSA key exchange.
 
-   ```sql
-   CREATE TABLE users (
-        user_phone INTEGER PRIMARY KEY,
-        public_key TEXT,
-        user_pw VARCHAR(100)
-   );
-   ```
-   - `user_phone`: A unique identifier for each client (in our case, their phone number).  
-   - `public_key`: The client’s RSA public key.
-   - `user_pw`: The client’s hashed password.
+**Schema**:
+```sql
+CREATE TABLE users (
+    user_phone INTEGER PRIMARY KEY,
+    public_key TEXT,
+    user_pw VARCHAR(100)
+);
+```
+
+- **Columns**:
+  - `user_phone`: A unique identifier for each client (e.g., their phone number). This is the primary key.
+  - `public_key`: The client’s RSA public key, used for encrypting the AES session key.
+  - `user_pw`: The client’s hashed password for authentication.
+
+- **Storage Operations**:
+  - **Adding a User**: The `add_user` function inserts a new user into the table.
+    ```python
+    self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone, public_key, user_pw))
+    ```
+  - **Fetching User Information**: Queries such as `get_user` and `get_user_public_key` retrieve user details or the public key based on the phone number.
 
 2. **Messages Table**  
-   - **Purpose**: Temporarily stores encrypted messages for offline delivery.  
+**Purpose**: Temporarily stores encrypted messages for offline delivery, along with metadata like sender/recipient, timestamps, and acknowledgment flags. 
 
-   ```sql
-    CREATE TABLE IF NOT EXISTS messages (
-        message_index INTEGER PRIMARY KEY AUTOINCREMENT,
-        sender_phone INTEGER,
-        recipient_phone INTEGER,
-        encrypted_aes_key TEXT,
-        ciphertext TEXT,
-        iv TEXT,
-        date TEXT,
-        blue_v BOOLEAN
-    );
-   ```
-   - `message_index`: Unique identifier for each row in the table.  
-   - `sender_phone`: Unique identifier of the message sender.  
-   - `recipient_phone`: Unique identifier of the message recipient.  
-   - `encrypted_aes_key`: RSA-encrypted AES session key.  
-   - `ciphertext`: The AES-encrypted message content.  
-   - `iv`: Initialization Vector used for AES encryption.  
-   - `date`: Automatically logs when the message was stored.
-   - `blue_v`: The delivery confirmation.
+**Schema**:
+```sql
+CREATE TABLE IF NOT EXISTS messages (
+    message_index INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_phone INTEGER,
+    recipient_phone INTEGER,
+    encrypted_aes_key TEXT,
+    ciphertext TEXT,
+    iv TEXT,
+    date TEXT,
+    blue_v BOOLEAN
+);
+```
+
+- **Columns**:
+  - `message_index`: Unique identifier for each message. Auto-incremented.
+  - `sender_phone`: Phone number of the sender.
+  - `recipient_phone`: Phone number of the recipient.
+  - `encrypted_aes_key`: RSA-encrypted AES session key.
+  - `ciphertext`: The AES-encrypted message content.
+  - `iv`: Initialization Vector used for AES encryption.
+  - `date`: Timestamp of when the message was added (e.g., `10:37:46 07-12-2024`).
+  - `blue_v`: Boolean flag indicating whether the message was acknowledged (true if acknowledged).
+
+- **Storage Operations**:
+  - **Adding a Message**: The `add_message` function inserts a new message, including a timestamp and an unacknowledged flag (`blue_v = False`).
+    ```python
+    self.c.execute("""
+    INSERT INTO messages (sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, blue_v)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, curr_timestamp, False))
+    ```
+  - **Fetching Messages**: The `fetch_messages_for_user` function retrieves all messages for a given recipient and updates their acknowledgment status (`blue_v = True`).
+    ```python
+    self.c.execute("UPDATE messages SET blue_v = ? WHERE recipient_phone = ? AND blue_v = ?", (True, user_phone, 0))
+    self.c.execute("SELECT sender_phone, recipient_phone, encrypted_aes_key, iv, ciphertext, date, blue_v FROM messages WHERE recipient_phone=?", (user_phone,))
+    ```
+  - **Acknowledging Messages**: The `acknowledge_message` function updates the `blue_v` flag for a specific message index.
+    ```python
+    self.c.execute("UPDATE messages SET blue_v = ? WHERE message_index = ?", (True, message_index))
+    ```
 
 ### **Protocol Workflow**
 
@@ -85,13 +116,13 @@ The database includes the following tables:
 
    **Client RSA Public Key**:
    - During registration, each client sends their public key to the server over a secure channel.
-   - The server securely stores each client’s public key, indexed by their unique identifier.
+   - The public key is sent to the server and stored in the `users` table.
 
        - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when needed.
        - Storing only public keys on the server minimizes the risk of sensitive data leaks if the server is compromised.
 
   - **Client RSA Private Key**:
-    - It is encrypted with AES-256 using a strong user-derived password and stored locally.
+   - The private key is encrypted with AES-256 using a user-derived password and stored locally on the client.
 
 #### **Message Exchange Phase**
 
@@ -136,21 +167,27 @@ The database includes the following tables:
    - If the recipient is online, the server relays it securely to them.
    - If the recipient is offline, the server stores the message in their inbox for later delivery.
 
+5. **Store the Message on the Server**:
+   - The encrypted message, AES key, IV, and metadata are sent to the server and stored in the `messages` table.
+
 ##### **Receiving a Message (Recipient)**
 
-1. **Decrypt the AES Key**:
+1. **Fetch Stored Messages**:
+   - When the recipient connects, the server retrieves all stored messages from the `messages` table using the `fetch_messages_for_user` function.
+
+2. **Decrypt the AES Key**:
 
     - The recipient receives the package and extracts the encrypted AES key.
     - Then they decrypt the AES key using their private RSA key:
          - Only the recipient has access to their RSA private key, ensuring that only they can decrypt the AES key and, consequently, the message.
 
-2. **Decrypt the Message**:
+3. **Decrypt the Message**:
 
    - The recipient decrypts the message using the AES key and IV.
       - Decrypting the message with AES is efficient and ensures that the original plaintext message is retrieved securely.
 
-3. **Send Acknowledgment**:
-   - After successfully decrypting the message, the recipient must send an acknowledgment message to the sender via the server.
+4. **Send Acknowledgment**:
+   - The recipient sends an acknowledgment, which updates the `blue_v` flag in the `messages` table via the `acknowledge_message` function.
    - The acknowledgment contains:
      - **Recipient's identifier**.
      - **Message ID** (the time that the message was sent).
@@ -163,25 +200,54 @@ The database includes the following tables:
          "status": "received"
      }
      ```
-
-4. **Verify Acknowledgment** (Sender):
-   - Upon receiving the acknowledgment, the sender verifies that the acknowledgment corresponds to the message sent (by matching the `message_id`).
-   - The acknowledgment ensures that the message was successfully delivered and decrypted.
-
 ---
 
 ### **Offline Delivery**
 
-1. If the recipient is offline:
-   - The server temporarily stores the encrypted message in the recipient’s inbox.
-   - Upon the recipient’s reconnection, the server delivers the message.
-       - This ensures that messages are not lost if the recipient is unavailable when the sender transmits them.
+1. **Storing Offline Messages**:
+   - If the recipient is offline, the server stores the message in the `messages` table with `blue_v = False`.
 
-2. After successful delivery:
-   - The server waits for the recipient's acknowledgment and confirms its receipt to the sender.
+2. **Delivery Upon Reconnection**:
+   - The server delivers all stored messages to the recipient when they reconnect.
 
-3. The message and acknowledgment are deleted from the server after delivery and confirmation.
-       - This minimizes the server's storage requirements and reduces the risk of exposing sensitive information if the server is compromised.
+3. **Cleanup**:
+   - Once the recipient acknowledges a message, it is flagged as acknowledged (`blue_v = True`), ensuring reliable delivery tracking.
+
+
+### **Ensuring Completeness of Messages (Source and Content)**
+
+#### **Achieving Completeness**
+
+Completeness of a message guarantees that it reaches the intended recipient fully intact and can be decrypted and acknowledged. This is achieved through a combination of verification mechanisms, secure storage, and encryption methods.
+
+#### **Implementation Details**
+1. **Source Verification**
+   - Each user registers with an RSA public key stored in the database.
+   - When sending a message, the recipient’s public key is verified in the database.
+   - The key is used to encrypt the AES session key, ensuring that only the intended recipient can decrypt it.
+
+2. **Message and Metadata Storage**
+   - Messages are stored in the `messages` table along with the following metadata:
+     - Sender and recipient phone numbers.
+     - Encrypted AES key.
+     - Initialization Vector (IV).
+     - Encrypted message content (`ciphertext`).
+     - Timestamp (`date`).
+     - Acknowledgment flag (`blue_v`).
+
+3. **Acknowledgment Tracking**
+   - Each message is marked as unacknowledged (`blue_v = False`) upon insertion into the database.
+   - When the recipient opens a message, the acknowledgment flag is updated to `blue_v = True`.
+
+4. **Handling Offline Recipients**
+   - Messages for offline recipients are stored in the `messages` table.
+   - These messages are automatically delivered when the recipient reconnects.
+
+5. **Integrity Verification**
+   - AES encryption ensures that tampered ciphertext cannot be decrypted successfully.
+   - The acknowledgment mechanism tracks whether messages have been fully received and read.
+
+---
 
 ### **Security Features and Guarantees**
 
@@ -192,6 +258,4 @@ The database includes the following tables:
 | **Integrity**            | AES encryption ensures that tampered ciphertext cannot be successfully decrypted. |
 | **Acknowledgment**       | Mandatory acknowledgment ensures message delivery and decryption confirmation.    |
 | **Resistance to MITM**   | RSA encryption prevents unauthorized decryption without the private key. |
-| **Offline Delivery**     | Server securely stores encrypted messages in the inbox for offline recipients.          |
-
-**Note**: Phone numbers must start with "5".
+| **Offline Delivery**     | Server securely stores encrypted messages for offline recipients.          |
