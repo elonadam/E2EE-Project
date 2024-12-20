@@ -23,7 +23,7 @@ The server uses an **SQLite database** to securely store and manage client data,
 
 - **Lightweight**: SQLite requires no separate server process, making it easy to integrate into a small-scale messaging application.  
 - **File-Based**: All data is stored in a single `.db` file, simplifying deployment and management.  
-- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity. 
+- **Reliability**: Despite its simplicity, SQLite provides ACID compliance, ensuring data integrity.
 - **Security**: To prevent SQL injection, placeholders (e.g., '?') are used in place of variable names.
 
 ---
@@ -85,9 +85,9 @@ The database includes the following tables:
 
    **Client RSA Public Key**:
    - During registration, each client sends their public key to the server over a secure channel.
-   - The server securely stores each client’s public key, indexed by their unique identifier. QQrefernce where in table
+   - The server securely stores each client’s public key, indexed by their unique identifier.
 
-       - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when she needs to send a message.
+       - The server acts as a trusted directory for public keys, ensuring that the sender can request the recipient's public key when needed.
        - Storing only public keys on the server minimizes the risk of sensitive data leaks if the server is compromised.
 
   - **Client RSA Private Key**:
@@ -107,8 +107,8 @@ The database includes the following tables:
 
 2. **Encrypt the AES Key**:
 
-   - The AES session key is encrypted with the the recipient’s public RSA key.
-        - RSA encryption ensures that only the the recipient (who has the corresponding private key) can decrypt the AES key.
+   - The AES session key is encrypted with the recipient’s public RSA key.
+        - RSA encryption ensures that only the recipient (who has the corresponding private key) can decrypt the AES key.
         - Encrypting the AES key allows both the sender and the recipient to securely use a symmetric encryption algorithm (AES) for the actual message, combining the efficiency of AES with the security of RSA.
 
 3. **Package the Encrypted Message**:
@@ -118,7 +118,7 @@ The database includes the following tables:
     - The **encrypted AES key** (RSA-encrypted with the recipient's public key).
     - The **ciphertext** (the AES-encrypted message - includes the subject and content).
     - The **IV** (used for AES encryption of the message).
-    - The **delivery confirmation** (message received flag)
+    - The **delivery confirmation** (message received flag).
 
     ```json
     {
@@ -133,20 +133,20 @@ The database includes the following tables:
     
 4. **Send the Message**:
    - Transmit the message package to the server.
-   - The server relays it securely to the recipient.
-
+   - If the recipient is online, the server relays it securely to them.
+   - If the recipient is offline, the server stores the message in their inbox for later delivery.
 
 ##### **Receiving a Message (Recipient)**
 
 1. **Decrypt the AES Key**:
 
-    -  The recipient receives the package and extracts the encrypted AES key.
-    - Then he decrypts the AES key using his private RSA key:
-    - Only the recipient has access to his RSA private key, ensuring that only he can decrypt the AES key and, consequently, the message.
+    - The recipient receives the package and extracts the encrypted AES key.
+    - Then they decrypt the AES key using their private RSA key:
+         - Only the recipient has access to their RSA private key, ensuring that only they can decrypt the AES key and, consequently, the message.
 
 2. **Decrypt the Message**:
 
-   - The server decrypts the message using the AES key and IV.
+   - The recipient decrypts the message using the AES key and IV.
       - Decrypting the message with AES is efficient and ensures that the original plaintext message is retrieved securely.
 
 3. **Send Acknowledgment**:
@@ -170,10 +170,10 @@ The database includes the following tables:
 
 ---
 
-### **Offline Delivery** QQnot relevent?
+### **Offline Delivery**
 
 1. If the recipient is offline:
-   - The server temporarily stores the encrypted message.
+   - The server temporarily stores the encrypted message in the recipient’s inbox.
    - Upon the recipient’s reconnection, the server delivers the message.
        - This ensures that messages are not lost if the recipient is unavailable when the sender transmits them.
 
@@ -188,12 +188,10 @@ The database includes the following tables:
 | **Requirement**         | **Implementation with RSA**                                                      |
 |--------------------------|-----------------------------------------------------------------------------------|
 | **Confidentiality**      | Messages are encrypted using AES-256; AES keys are RSA-2048 encrypted.                |
-| **Authentication**       | RRSA ensures that only the the recipient can decrypt the AES key, confirming the recipient’s identity. |
+| **Authentication**       | RSA ensures that only the recipient can decrypt the AES key, confirming the recipient’s identity. |
 | **Integrity**            | AES encryption ensures that tampered ciphertext cannot be successfully decrypted. |
 | **Acknowledgment**       | Mandatory acknowledgment ensures message delivery and decryption confirmation.    |
 | **Resistance to MITM**   | RSA encryption prevents unauthorized decryption without the private key. |
-| **Offline Delivery**     | Server securely stores encrypted messages for offline recipients.          |
+| **Offline Delivery**     | Server securely stores encrypted messages in the inbox for offline recipients.          |
 
-
-הנחות:
-מספר טלפון חייב להתחיל ב5.
+**Note**: Phone numbers must start with "5".
