@@ -10,8 +10,10 @@ close - close connection to db
 verify_user_credentials
 fetch_messages_for_user
 get_user_public_key(user_phone)
-acknowledge_message
+seen_notification_sender
 """
+
+
 class DatabaseManager:
     def __init__(self):
         self.conn = sqlite3.connect("data.db")  # Connect to the database
@@ -40,7 +42,8 @@ class DatabaseManager:
                 ciphertext TEXT,
                 iv TEXT,
                 date TEXT,
-                blue_v BOOLEAN
+                blue_v BOOLEAN DEFAULT 0,
+                seen_notification BOOLEAN DEFAULT 0
             );
             """)
             self.conn.commit()  # commit changes and close the connection
@@ -80,7 +83,7 @@ class DatabaseManager:
             self.c.execute("""
                 INSERT INTO messages (sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, blue_v)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, curr_timestamp, False))
+                           (sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, curr_timestamp, False))
             # blue_v will be checked later, date is not provide but assigned here
 
             print(f"message from {sender_num} to {recipient_num} added successfully!")
@@ -89,11 +92,11 @@ class DatabaseManager:
 
         # Commit changes and close the connection
         self.conn.commit()
-        
+
     def close(self):
         self.conn.close()
 
-    def verify_user_credentials(self, user_phone, password): #QQ how does this work?
+    def verify_user_credentials(self, user_phone, password):  # QQ how does this work?
         self.c.execute("SELECT user_pw FROM users WHERE user_phone=?", (user_phone,))
         row = self.c.fetchone()
         return row is not None and row[0] == password
@@ -115,7 +118,7 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"Error while checking user existence: {e}")
             return False
-                
+
     def get_user_public_key(self, phone):
         try:
             query = "SELECT public_key FROM users WHERE user_phone = ?"
@@ -124,11 +127,22 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"Error fetching public key for user {phone}: {e}")
             return False
-        
-    def acknowledge_message(self, message_index):
-        try:
-            self.c.execute("UPDATE messages SET blue_v = ? WHERE message_index = ?", (True, message_index))
+
+    def seen_notification_sender(self, sender_p):
+        query = """
+            SELECT message_index FROM messages WHERE
+             sender_phone = ? 
+             AND blue_v = 1 
+             AND (seen_notification != 1 OR seen_notification IS NULL)"""
+        self.c.execute(query, (sender_p,))
+        results = self.c.fetchall()
+        #print(f"resualts its {results}")
+        message_indexes = [row[0] for row in results]
+
+        if message_indexes:
+            placeholders = ",".join("?" * len(message_indexes))
+            update_query = f"UPDATE messages SET seen_notification = 1 WHERE message_index IN ({placeholders})"
+            self.c.execute(update_query, message_indexes)
             self.conn.commit()
-            print(f"Message {message_index} acknowledged successfully!")
-        except sqlite3.Error as e:
-            print(f"Error acknowledging message {message_index}: {e}")
+        #print(message_indexes)
+        return message_indexes
