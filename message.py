@@ -11,6 +11,6 @@ class Message:
         self.recipient_num = int(recipient_num)
         self.encrypted_aes_key = encrypted_aes_key
         self.ciphertext = ciphertext 
-        self.date = date
-        self.iv = iv
-        self.blue_v = blue_v
+        self.date = date # timestamp using date class
+        self.iv = iv # used later in encryption
+        self.blue_v = blue_v # if the message reached the user either online or not, equals true
