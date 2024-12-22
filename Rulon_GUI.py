@@ -1,4 +1,3 @@
-
 import os
 import customtkinter as ctk
 from tkinter import messagebox
@@ -18,11 +17,20 @@ COLOR_BUTTON_HOVER = "#800020"  # burgundy
 
 user_token_num = ()  # tuple for validation
 
+
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
     return (token, phone)
+
+
+# def seen_noti_popup(message_index):
+#     db = DatabaseManager()
+#     sender_p = "..."
+#     send_messages = db.seen_notification_sender(sender_p)
+#     if send_messages:
+#         messagebox.showinfo(f"Message to {recipient_phone} was read")
 
 
 class StartWindow(ctk.CTk):
@@ -119,11 +127,13 @@ class RegisterWindow(ctk.CTk):
                                                    corner_radius=15)
         self.validate_token_button.pack(pady=5)
 
-        # Timer label
-        self.timer_label = ctk.CTkLabel(self, text="", text_color="white", fg_color=COLOR_BG, corner_radius=15)
+        # Timer label, used to display some text first, later will be timer
+        self.timer_label = ctk.CTkLabel(self, text="Phone number should start with '5'", text_color="white",
+                                        fg_color=COLOR_BG, corner_radius=15)
         self.timer_label.pack(pady=10)
 
-        self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG, corner_radius=15)
+        self.password_label = ctk.CTkLabel(self, text="Create Password:", text_color="white", fg_color=COLOR_BG,
+                                           corner_radius=15)
         self.password_entry = ctk.CTkEntry(self, textvariable=self.password_var, fg_color=COLOR_ENTRY, show="*")
         self.set_pw_button = ctk.CTkButton(self, text="Set Password", fg_color=COLOR_BUTTON,
                                            hover_color=COLOR_BUTTON_HOVER, corner_radius=15, command=self.set_password)
@@ -317,13 +327,17 @@ class MessagesWindow(ctk.CTk):
         # Display messages initially
         self.display_messages()
 
+        #~~~~~~~~~~~~~~~~~~~~~~~~
+        self.seen_noti_popup()
+
+
         # Frame for sending messages
         send_frame = ctk.CTkFrame(self, fg_color="#1C1C1C")
         send_frame.pack(fill="x", padx=20, pady=10)
 
         send_label = ctk.CTkLabel(send_frame, text="Send a New Message", text_color="white", fg_color="#1C1C1C",
                                   font=("Arial", 16))
-        send_label.pack(pady=5 , padx=5, anchor='w')
+        send_label.pack(pady=5, padx=5, anchor='w')
 
         # Recipient Entry
         recipient_label = ctk.CTkLabel(send_frame, text="Recipient Phone:", text_color="white", fg_color="#1C1C1C")
@@ -355,6 +369,16 @@ class MessagesWindow(ctk.CTk):
                                     hover_color=COLOR_BUTTON_HOVER, command=self.back_to_start)
         back_button.pack(pady=10, padx=5, anchor='e')
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def seen_noti_popup(self):
+        recipient_phone = self.phone
+        db = DatabaseManager()
+        # sender_p = "..."
+        send_messages = db.seen_notification_sender(recipient_phone)
+        for message in send_messages:
+            messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def display_messages(self):
         for widget in self.messages_frame.winfo_children():
             widget.destroy()
@@ -363,8 +387,8 @@ class MessagesWindow(ctk.CTk):
         messages = db.fetch_messages_for_user(self.phone)
         # Suppose each message returns: sender, recipient, enc_aes_key, nonce, ciphertext, date, blue_v
         for msg in messages:
-            sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg #ERROR
-        
+            sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg  # ERROR
+
             # Decrypt AES key using our private key
             # Load your private key (stored securely, decrypted in memory)
             # aes_key = rsa_decrypt_aes_key(enc_aes_key, load_private_key, passphrase=b"MyPass")
@@ -409,20 +433,21 @@ class MessagesWindow(ctk.CTk):
         db = DatabaseManager()
 
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        plain_text = "Subject:/n"+subject+"/nContent:/n"+content
+        plain_text = "Subject:/n" + subject + "/nContent:/n" + content
         recipient_public_key_pem = db.get_user_public_key(recipient)
-        aes_key = os.urandom(32) # for aes-256
+        aes_key = os.urandom(32)  # for aes-256
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         try:
             if enc_aes_key is None:
                 return None
-            db.add_message(sender_num=self.phone, recipient_num=recipient, encrypted_aes_key=enc_aes_key, ciphertext=ciphertext, iv=nonce)
+            db.add_message(sender_num=self.phone, recipient_num=recipient, encrypted_aes_key=enc_aes_key,
+                           ciphertext=ciphertext, iv=nonce)
             messagebox.showinfo("Success", "Message sent successfully!")
             # Optionally refresh the message list. If the user sends a message to themselves, they will see it.
             self.display_messages()
-            
+
             # Clear the fields after sending
             self.recipient_var.set("")
             self.subject_var.set("")
