@@ -84,7 +84,6 @@ def generate_rsa_key_pair(passphrase: bytes = None):  # we can delete param i th
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
-
     return private_key_pem, public_key_pem
 
 
