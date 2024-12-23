@@ -1,6 +1,4 @@
-import os
 import customtkinter as ctk
-from tkinter import messagebox
 from db_manager import DatabaseManager
 from random import randint
 from encryption_funcs import *  # hash_password, verify_password
@@ -15,23 +13,11 @@ COLOR_ENTRY = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
 
-user_token_num = ()  # tuple for validation
-
-
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
     return (token, phone)
-
-
-# def seen_noti_popup(message_index):
-#     db = DatabaseManager()
-#     sender_p = "..."
-#     send_messages = db.seen_notification_sender(sender_p)
-#     if send_messages:
-#         messagebox.showinfo(f"Message to {recipient_phone} was read")
-
 
 class StartWindow(ctk.CTk):
     def __init__(self):
@@ -238,10 +224,10 @@ class RegisterWindow(ctk.CTk):
             # Register user in DB using DatabaseManager
             db = DatabaseManager()
 
-            #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             private_key_pem, public_key_pem = generate_rsa_key_pair()
+            # Print secret key to terminal 
+            print(f"Private key for {phone}:\n{private_key_pem.decode()}\n\nPublic key for {phone}:\n{public_key_pem.decode()}\n")
             save_private_key(private_key_pem, phone)
-            #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
             db.add_user(user_phone=phone, public_key=public_key_pem, user_pw=hashed_pw.decode())
@@ -369,7 +355,6 @@ class MessagesWindow(ctk.CTk):
                                     hover_color=COLOR_BUTTON_HOVER, command=self.back_to_start)
         back_button.pack(pady=10, padx=5, anchor='e')
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def seen_noti_popup(self):
         recipient_phone = self.phone
         db = DatabaseManager()
@@ -378,26 +363,25 @@ class MessagesWindow(ctk.CTk):
         for message in send_messages:
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def display_messages(self):
         for widget in self.messages_frame.winfo_children():
             widget.destroy()
 
         db = DatabaseManager()
         messages = db.fetch_messages_for_user(self.phone)
-        # Suppose each message returns: sender, recipient, enc_aes_key, nonce, ciphertext, date, blue_v
         for msg in messages:
             sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg  # ERROR
-
+            # Print the AES key, nonce, and ciphertext before decryption
+            print(f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n")
             # Decrypt AES key using our private key
             # Load your private key (stored securely, decrypted in memory)
-            # aes_key = rsa_decrypt_aes_key(enc_aes_key, load_private_key, passphrase=b"MyPass")
             aes_key = rsa_decrypt_aes_key(enc_aes_key, self.phone)
 
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
             content = plaintext_bytes.decode('utf-8')
-
+            #Print the AES key, nonce, and ciphertext after decryption
+            print(f"Decrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n")
             # Display as before
             msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
             msg_frame.pack(fill="x", pady=5)
@@ -431,14 +415,17 @@ class MessagesWindow(ctk.CTk):
 
         # Send the message
         db = DatabaseManager()
-
-        #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         plain_text = "Subject:/n" + subject + "/nContent:/n" + content
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32)  # for aes-256
+        # Print the AES key before encryption
+        print(f"Generated AES key: {aes_key}\n")
+        # Print message before encryption
+        print(f"Plaintext: {plain_text}\n")
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
-        #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Print the AES key, nonce, and ciphertext before sending after encryption
+        print(f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n")
         try:
             if enc_aes_key is None:
                 return None
