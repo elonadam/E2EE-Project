@@ -21,46 +21,24 @@ don't need to store the salt separately with bcrypt; it is embedded in the hash 
 
 
 def hash_password_bcrypt(password):
-    """
-    Hashes a password using bcrypt.
-
-    Args:
-        password (str): The plain-text password to hash.
-
-    Returns:
-        bytes: The bcrypt hash of the password.
-    """
-    # Generate a salt and hash the password
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode(), salt)
+   # Hashes a password using bcrypt, returns bcrypt hash
+    salt = bcrypt.gensalt() # Generate a salt to make more unique
+    hashed = bcrypt.hashpw(password.encode(), salt) # result of hash
     print(f"inside hash_pw func, salt is {salt}, hashed is {hashed}\n")
     return hashed
 
 
 def verify_password_bcrypt(password, hashed):
-    """
-    Verifies a password against a given bcrypt hash.
-
-    Args:
-        password (str): The plain-text password to verify.
-        hashed (bytes): The bcrypt hash to verify against.
-
-    Returns:
-        bool: True if the password matches the hash, False otherwise.
-    """
+    # Verifies a password against a given bcrypt hash, gets password as str from GUI and hashed from DB to compare, return bool
     print(
         f"inside verify func, password is {password} hashed as param is {hashed} \n bcrypt computed: {bcrypt.checkpw(password.encode(), hashed)}")
     return bcrypt.checkpw(password.encode(), hashed)
 
 
-def generate_rsa_key_pair(passphrase: bytes = None):  # we can delete param i think
-    """
-    Generate an RSA private/public key pair.
-
-    :return: (private_key_pem, public_key_pem)
-    """
+def generate_rsa_key_pair():
+    # generate public and private RSA keys
     private_key = rsa.generate_private_key(
-        public_exponent=65537,
+        public_exponent=65537, # standart prime intager for rsa
         key_size=2048,
         backend=default_backend()
     )

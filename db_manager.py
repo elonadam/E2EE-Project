@@ -1,31 +1,18 @@
 import sqlite3
 from datetime import datetime
 
-""" funcs here are:
-create tables - as it sounds, void
-add_user - adding one user, input (user_phone INTEGER,user_name STRING)
-add_message
-check_user_exists
-close - close connection to db
-verify_user_credentials
-fetch_messages_for_user
-get_user_public_key(user_phone)
-seen_notification_sender
-"""
-
 
 class DatabaseManager:
     def __init__(self):
-        self.conn = sqlite3.connect("data.db")  # Connect to the database
+        self.conn = sqlite3.connect("data.db")  # connect to the database
         self.c = self.conn.cursor()
 
-    def create_tables(self):  # saving the actual creation for later, if will need later
+    def create_tables(self):  # create tables in DB
         """
-        Creates the `users` and `messages` tables in the SQLite database
-        if they do not already exist.
+        Creates the users and messages tables in the SQLite database if not exist
         """
 
-        try:  # Create tables
+        try:
             self.c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_phone INTEGER PRIMARY KEY,
@@ -53,7 +40,7 @@ class DatabaseManager:
         finally:
             self.conn.close()
 
-    def add_user(self, user_phone, public_key, user_pw):
+    def add_user(self, user_phone, public_key, user_pw): # adding user to the DB from the GUI
         try:
             self.c.execute("INSERT INTO users VALUES (?, ?, ?)", (user_phone, public_key, user_pw))
             print(f"User {user_phone} added successfully!")
@@ -62,11 +49,11 @@ class DatabaseManager:
 
         self.conn.commit()
 
-    def check_user_exists(self, user_phone):
+    def check_user_exists(self, user_phone): # check if user exist to recive the messages
         self.c.execute("SELECT user_phone FROM users WHERE user_phone=?", (user_phone,))
         return self.c.fetchone() is not None
 
-    def add_message(self, sender_num, recipient_num, encrypted_aes_key, ciphertext, iv):
+    def add_message(self, sender_num, recipient_num, encrypted_aes_key, ciphertext, iv): # add message to DB
         """
         add message to DB, auto increment primary key message_index
         has auto timestamp
@@ -90,18 +77,10 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"Error adding message from {sender_num}: {e}")
 
-        # Commit changes and close the connection
+        # commit changes and close the connection
         self.conn.commit()
 
-    def close(self):
-        self.conn.close()
-
-    def verify_user_credentials(self, user_phone, password):  # QQ how does this work?
-        self.c.execute("SELECT user_pw FROM users WHERE user_phone=?", (user_phone,))
-        row = self.c.fetchone()
-        return row is not None and row[0] == password
-
-    def fetch_messages_for_user(self, user_phone):
+    def fetch_messages_for_user(self, user_phone): # extract messages that were sent to the user from DB
 
         self.c.execute("UPDATE messages SET blue_v = ? WHERE recipient_phone = ? AND blue_v = ?", (True, user_phone, 0))
         self.conn.commit()
@@ -110,7 +89,7 @@ class DatabaseManager:
             (user_phone,))
         return self.c.fetchall()
 
-    def get_user(self, phone):
+    def get_user(self, phone): # fetch user number to check if exist
         try:
             query = "SELECT * FROM users WHERE user_phone = ?"
             self.c.execute(query, (phone,))
@@ -119,7 +98,7 @@ class DatabaseManager:
             print(f"Error while checking user existence: {e}")
             return False
 
-    def get_user_public_key(self, phone):
+    def get_user_public_key(self, phone): # get the public key of the user to encrypt later
         try:
             query = "SELECT public_key FROM users WHERE user_phone = ?"
             self.c.execute(query, (phone,))
@@ -128,21 +107,20 @@ class DatabaseManager:
             print(f"Error fetching public key for user {phone}: {e}")
             return False
 
-    def seen_notification_sender(self, sender_p):
-        query = """
+    def seen_notification_sender(self, sender_p): # iterate through the messages to check if the user read the message to notify the sender
+        # The query chose only messages that delivered to recipient and sender didn't got notification yet
+        query = """ 
             SELECT message_index FROM messages WHERE
              sender_phone = ? 
              AND blue_v = 1 
              AND (seen_notification != 1 OR seen_notification IS NULL)"""
         self.c.execute(query, (sender_p,))
         results = self.c.fetchall()
-        #print(f"resualts its {results}")
         message_indexes = [row[0] for row in results]
 
-        if message_indexes:
-            placeholders = ",".join("?" * len(message_indexes))
+        if message_indexes: # true if at least one message
+            placeholders = ",".join("?" * len(message_indexes)) # creates a sequence of '?' in the length of message_indexes
             update_query = f"UPDATE messages SET seen_notification = 1 WHERE message_index IN ({placeholders})"
             self.c.execute(update_query, message_indexes)
             self.conn.commit()
-        #print(message_indexes)
         return message_indexes
