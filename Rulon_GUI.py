@@ -12,12 +12,15 @@ COLOR_BG = "#0C0C0C"  # obsidian black
 COLOR_ENTRY = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
+TEXT_COLOR = "#FFFFFF"
+
 
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
     return (token, phone)
+
 
 class StartWindow(ctk.CTk):
     def __init__(self):
@@ -226,7 +229,8 @@ class RegisterWindow(ctk.CTk):
 
             private_key_pem, public_key_pem = generate_rsa_key_pair()
             # Print secret key to terminal 
-            print(f"Private key for {phone}:\n{private_key_pem.decode()}\n\nPublic key for {phone}:\n{public_key_pem.decode()}\n")
+            print(
+                f"Private key for {phone}:\n{private_key_pem.decode()}\n\nPublic key for {phone}:\n{public_key_pem.decode()}\n")
             save_private_key(private_key_pem, phone)
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
@@ -303,19 +307,20 @@ class MessagesWindow(ctk.CTk):
         self.phone = phone
 
         title_label = ctk.CTkLabel(self, text="Your Messages", text_color="white",
-                                   fg_color=COLOR_BG, font=("Arial", 20))
+                                   fg_color=COLOR_BG, corner_radius=15, font=("Arial", 20))
         title_label.pack(pady=10)
 
         # Frame for messages display
         self.messages_frame = ctk.CTkFrame(self, fg_color=COLOR_BG)
+        self.scrollable_frame = self.create_scrollable_frame(self.messages_frame)
         self.messages_frame.pack(fill="both", expand=True, padx=20, pady=(20, 10))
 
         # Display messages initially
         self.display_messages()
 
-        #~~~~~~~~~~~~~~~~~~~~~~~~
-        self.seen_noti_popup()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~
 
+        self.seen_noti_popup()
 
         # Frame for sending messages
         send_frame = ctk.CTkFrame(self, fg_color="#1C1C1C")
@@ -329,21 +334,21 @@ class MessagesWindow(ctk.CTk):
         recipient_label = ctk.CTkLabel(send_frame, text="Recipient Phone:", text_color="white", fg_color="#1C1C1C")
         recipient_label.pack(pady=5, padx=5, anchor='w')
         self.recipient_var = ctk.StringVar()
-        recipient_entry = ctk.CTkEntry(send_frame, textvariable=self.recipient_var, fg_color=COLOR_ENTRY)
+        recipient_entry = ctk.CTkEntry(send_frame, textvariable=self.recipient_var,text_color=COLOR_BG, fg_color=COLOR_ENTRY)
         recipient_entry.pack(pady=5, padx=5, anchor='w')
 
         # Subject Entry
         subject_label = ctk.CTkLabel(send_frame, text="Subject:", text_color="white", fg_color="#1C1C1C")
         subject_label.pack(pady=5, padx=5, anchor='w')
         self.subject_var = ctk.StringVar()
-        subject_entry = ctk.CTkEntry(send_frame, textvariable=self.subject_var, fg_color=COLOR_ENTRY)
+        subject_entry = ctk.CTkEntry(send_frame, textvariable=self.subject_var,text_color=COLOR_BG, fg_color=COLOR_ENTRY)
         subject_entry.pack(pady=5, padx=5, anchor='w')
 
         # Content Entry just single line for simplicity
         content_label = ctk.CTkLabel(send_frame, text="Content:", text_color="white", fg_color="#1C1C1C")
         content_label.pack(pady=5, padx=5, anchor='w')
         self.content_var = ctk.StringVar()
-        content_entry = ctk.CTkEntry(send_frame, textvariable=self.content_var, fg_color=COLOR_ENTRY, width=400)
+        content_entry = ctk.CTkEntry(send_frame, textvariable=self.content_var, fg_color=COLOR_ENTRY,text_color=COLOR_BG, width=400)
         content_entry.pack(pady=5, padx=5, anchor='w')
 
         send_button = ctk.CTkButton(send_frame, text="Send Message", fg_color=COLOR_BUTTON,
@@ -364,36 +369,39 @@ class MessagesWindow(ctk.CTk):
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
     def display_messages(self):
-        for widget in self.messages_frame.winfo_children():
+        # Clear existing widgets in the scrollable frame
+        for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
         db = DatabaseManager()
         messages = db.fetch_messages_for_user(self.phone)
         for msg in messages:
-            sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg  # ERROR
+            sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg
+
             # Print the AES key, nonce, and ciphertext before decryption
             print(f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n")
+
             # Decrypt AES key using our private key
-            # Load your private key (stored securely, decrypted in memory)
             aes_key = rsa_decrypt_aes_key(enc_aes_key, self.phone)
 
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
             content = plaintext_bytes.decode('utf-8')
-            #Print the AES key, nonce, and ciphertext after decryption
+            # Print the AES key, nonce, and ciphertext after decryption
             print(f"Decrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n")
             # Display as before
-            msg_frame = ctk.CTkFrame(self.messages_frame, fg_color="#1C1C1C")
-            msg_frame.pack(fill="x", pady=5)
+            # Create a frame INSIDE the scrollable frame
+            msg_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="#1C1C1C")
+            msg_frame.pack(fill="x", pady=5, padx=5)
 
-            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color="black", fg_color="#1C1C1C",
+            sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color=TEXT_COLOR, fg_color="#1C1C1C",
                                         anchor="w")
             sender_label.pack(fill="x", padx=5)
 
-            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color="black", fg_color="#1C1C1C",
+            date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color=COLOR_ENTRY, fg_color="#1C1C1C",
                                       anchor="w")
             date_label.pack(fill="x", padx=5)
-            content_label = ctk.CTkLabel(msg_frame, text=f"Content: {content}", text_color="black", fg_color="#1C1C1C",
+            content_label = ctk.CTkLabel(msg_frame, text=f"Subject: {content}", text_color=TEXT_COLOR, fg_color="#1C1C1C",
                                          anchor="w")
             content_label.pack(fill="x", padx=5)
 
@@ -415,7 +423,8 @@ class MessagesWindow(ctk.CTk):
 
         # Send the message
         db = DatabaseManager()
-        plain_text = "Subject:/n" + subject + "/nContent:/n" + content
+        plain_text = subject + "\nContent: " + content
+        print(f"subject is {subject}, content is {content}")
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32)  # for aes-256
         # Print the AES key before encryption
@@ -442,6 +451,14 @@ class MessagesWindow(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
             return None
+
+    def create_scrollable_frame(self, parent):
+        """
+        Creates a scrollable frame inside 'parent' using CTkScrollableFrame.
+        """
+        scrollable_frame = ctk.CTkScrollableFrame(parent, label_text="")
+        scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        return scrollable_frame
 
     def back_to_start(self):
         self.destroy()
