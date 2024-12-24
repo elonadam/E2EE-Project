@@ -2,7 +2,6 @@ here to write TODOs,
 this is a good video about SQLite - https://www.youtube.com/watch?v=byHcYRpMgI4
 
 # TODO Change blue_v to received_flag and make it work RUTH
-# TODO scroller for messages window - ELON
 # TODO RUTH - Finish protocal 
     - Availabilty
 # TODO Print all security steps -RUTH
