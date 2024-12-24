@@ -119,7 +119,8 @@ class DatabaseManager:
         message_indexes = [row[0] for row in results]
 
         if message_indexes: # true if at least one message
-            placeholders = ",".join("?" * len(message_indexes)) # creates a sequence of '?' in the length of message_indexes
+            placeholders = ",".join("?" * len(message_indexes)) # creates a sequence of '?' in the length of
+            # message_indexes
             update_query = f"UPDATE messages SET seen_notification = 1 WHERE message_index IN ({placeholders})"
             self.c.execute(update_query, message_indexes)
             self.conn.commit()
