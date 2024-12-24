@@ -1,5 +1,3 @@
-import sqlite3
-
 from db_manager import DatabaseManager
 from Rulon_GUI import StartWindow
 
