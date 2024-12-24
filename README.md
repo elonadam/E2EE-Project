@@ -18,5 +18,20 @@ this is a good video about SQLite - https://www.youtube.com/watch?v=byHcYRpMgI4
     - create dict to save all this and print a nice message including everything
 # TODO Fix consule prints - ELON
 
+i cant fix the console prints in a good way, lets just declare that we have it
+
+invalid command name "1873777213568update"
+    while executing
+"1873777213568update"
+    ("after" script)
+invalid command name "1873784369472check_dpi_scaling"
+    while executing
+"1873784369472check_dpi_scaling"
+    ("after" script)
+invalid command name "1873784369600_click_animation"
+    while executing
+"1873784369600_click_animation"
+    ("after" script)
+
 
 
