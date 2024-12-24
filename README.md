@@ -17,7 +17,6 @@ this is a good video about SQLite - https://www.youtube.com/watch?v=byHcYRpMgI4
     - message after decryption DONE
     - create dict to save all this and print a nice message including everything
 # TODO Fix consule prints - ELON
-# TODO line 46 in encryptin funcs, delete passpharse code lines, and keep documenting - ELON
 
 
 
