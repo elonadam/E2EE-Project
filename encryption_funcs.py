@@ -1,4 +1,3 @@
-
 import os
 from tkinter import messagebox
 
@@ -21,9 +20,9 @@ don't need to store the salt separately with bcrypt; it is embedded in the hash 
 
 
 def hash_password_bcrypt(password):
-   # Hashes a password using bcrypt, returns bcrypt hash
-    salt = bcrypt.gensalt() # Generate a salt to make more unique
-    hashed = bcrypt.hashpw(password.encode(), salt) # result of hash
+    # Hashes a password using bcrypt, returns bcrypt hash
+    salt = bcrypt.gensalt()  # Generate a salt to make more unique
+    hashed = bcrypt.hashpw(password.encode(), salt)  # result of hash
     print(f"inside hash_pw func, salt is {salt}, hashed is {hashed}\n")
     return hashed
 
@@ -38,21 +37,16 @@ def verify_password_bcrypt(password, hashed):
 def generate_rsa_key_pair():
     # generate public and private RSA keys
     private_key = rsa.generate_private_key(
-        public_exponent=65537, # standart prime intager for rsa
+        public_exponent=65537,  # standard prime integer for rsa
         key_size=2048,
         backend=default_backend()
     )
 
-    # Serialize private key TODO 3 if not using passprase delete this
-    if passphrase:
-        encryption_algo = BestAvailableEncryption(passphrase)
-    else:
-        encryption_algo = NoEncryption()
-
+    # Serialize private key
     private_key_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=encryption_algo
+        encryption_algorithm=NoEncryption()  # not using passphrse
     )
 
     # Serialize public key
@@ -91,11 +85,9 @@ def load_private_key(user_phone: int):
 
 
 def save_private_key(encrypted_private_key, user_phone):
-    """
-    This method saves the private key to safe file.
-    """
-    # Define the directory path
-    directory = "private_keys"
+    # This method saves the private key to safe file.
+
+    directory = "private_keys"  # define the directory path
 
     # Create the directory if it doesn't exist
     os.makedirs(directory, exist_ok=True)
@@ -121,9 +113,7 @@ def rsa_encrypt_aes_key(aes_key, recipient_public_key_pem):
         return None
 
 
-# def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_private_key_pem: bytes, passphrase: bytes = None) -> bytes:
 def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_phone):
-    # recipient_private_key = load_private_key(recipient_private_key_pem, passphrase)
     # load enc private key from file
     recipient_private_key = load_private_key(recipient_phone)
     try:
@@ -150,11 +140,7 @@ def rsa_decrypt_aes_key(enc_aes_key: bytes, recipient_phone):
 
 
 def encrypt_message_with_aes(aes_key, plaintext):
-    """
-    ciphertext = aesgcm.encrypt(nonce, plaintext, None)
-    Encrypt plaintext using AES-GCM.
-    :return: (nonce, ciphertext)
-    """
+    # gets aes key and plaintext to encrypt and store later
     if isinstance(plaintext, str):  # Convert string to bytes if necessary
         plaintext = plaintext.encode('utf-8')
 
