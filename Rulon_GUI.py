@@ -14,6 +14,8 @@ COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
 TEXT_COLOR = "#FFFFFF"
 
+# Global variable to store logs
+log_dict = {}
 
 def print_auth_token(phone):
     # print token to terminal (for testing)
@@ -21,12 +23,13 @@ def print_auth_token(phone):
     print(f"Auth token for {phone}: {token}")
     return (token, phone)  
 
-def print_encryption_steps(steps, phone):
+def print_encryption_steps(phone):
+    global log_dict  # Access the global log_dict
     print (f"Encryption steps for {phone}:")
-    for step in steps:
-        print(step)
+    print(log_dict)
     print("\n")
-    
+    log_dict = {}  # Reset the log_dict to an empty dictionary
+   
 class StartWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -431,13 +434,13 @@ class MessagesWindow(ctk.CTk):
         print(f"subject is {subject}, content is {content}")
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32)  # for aes-256
-        # Print the AES key before encryption
+        # Print the AES key before encryptionQQ
         print(f"Generated AES key: {aes_key}\n")
-        # Print message before encryption
+        # Print message before encryptionQQ
         print(f"Plaintext: {plain_text}\n")
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
-        # Print the AES key, nonce, and ciphertext before sending after encryption
+        # Print the AES key, nonce, and ciphertext before sending after encryptionQQ
         print(f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n")
         try:
             if enc_aes_key is None:
