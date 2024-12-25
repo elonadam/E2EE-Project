@@ -20,6 +20,13 @@ def print_auth_token(phone):
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
     return (token, phone)  
+
+def print_encryption_steps(steps, phone):
+    print (f"Encryption steps for {phone}:")
+    for step in steps:
+        print(step)
+    print("\n")
+    
 class StartWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
