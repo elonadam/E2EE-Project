@@ -15,7 +15,7 @@ COLOR_BUTTON_HOVER = "#800020"  # burgundy
 TEXT_COLOR = "#FFFFFF"
 
 # Global variable to store logs
-log_dict = {}
+log_str = ""
 
 def print_auth_token(phone):
     # print token to terminal (for testing)
@@ -24,11 +24,11 @@ def print_auth_token(phone):
     return (token, phone)  
 
 def print_encryption_steps(phone):
-    global log_dict  # Access the global log_dict
+    global log_str  # Access the global log_str
     print (f"Encryption steps for {phone}:")
-    print(log_dict)
+    print(log_str)
     print("\n")
-    log_dict = {}  # Reset the log_dict to an empty dictionary
+    log_str = ""  # Reset the log_str to an empty string
    
 class StartWindow(ctk.CTk):
     def __init__(self):
@@ -229,6 +229,7 @@ class RegisterWindow(ctk.CTk):
             messagebox.showerror("Error", "Invalid token.")
 
     def set_password(self):
+        global log_str
         phone = self.phone_var.get()
         password = self.password_var.get()
         if password:
@@ -236,10 +237,14 @@ class RegisterWindow(ctk.CTk):
             db = DatabaseManager()
 
             private_key_pem, public_key_pem  = generate_rsa_key_pair()
-            # Print secret key to terminal QQ
-            print(f"Private key for {phone}:\n{private_key_pem.decode()}\n\nPublic key for {phone}:\n{public_key_pem.decode()}\n")
             save_private_key(private_key_pem, phone)
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
+            
+            # Print secret key and password to terminal
+            str= f"Password Private key for {phone}:\n{private_key_pem.decode()}\nPublic key for {phone}:\n{public_key_pem.decode()}\n"
+            print(str)
+            log_str += str
+            
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
             db.add_user(user_phone=phone, public_key=public_key_pem, user_pw=hashed_pw.decode())
             messagebox.showinfo("Registered", "Registration successful! You can now login.")
@@ -385,8 +390,10 @@ class MessagesWindow(ctk.CTk):
         for msg in messages:
             sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg
 
-            # Print the AES key, nonce, and ciphertext before decryptionQQ
-            print(f"Generated AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n")
+            # Print the AES key, nonce, and ciphertext before decryption
+            str = f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+            print(str)
+            log_str += str
 
             # Decrypt AES key using our private key
             aes_key = rsa_decrypt_aes_key(enc_aes_key, self.phone)
@@ -394,8 +401,12 @@ class MessagesWindow(ctk.CTk):
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
             content = plaintext_bytes.decode('utf-8')
-            # Print the AES key, nonce, and ciphertext after decryptionQQ
-            print(f"Decrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n")
+            
+            # Print the AES key, nonce, and ciphertext after decryption
+            str = f"Decrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n"
+            print(str)
+            log_str += str
+            
             # Display as before
             # Create a frame INSIDE the scrollable frame
             msg_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="#1C1C1C")
@@ -413,6 +424,7 @@ class MessagesWindow(ctk.CTk):
             content_label.pack(fill="x", padx=5)
 
     def send_message(self):
+        global log_str
         recipient = self.recipient_var.get()
         subject = self.subject_var.get()
         content = self.content_var.get()
@@ -434,14 +446,20 @@ class MessagesWindow(ctk.CTk):
         print(f"subject is {subject}, content is {content}")
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32)  # for aes-256
-        # Print the AES key before encryptionQQ
-        print(f"Generated AES key: {aes_key}\n")
-        # Print message before encryptionQQ
-        print(f"Plaintext: {plain_text}\n")
+        
+        # Print the AES key and message before encryption
+        str = f"Generated AES key: {aes_key}\nPlaintext: {plain_text}\n"
+        print(str)
+        log_str += str
+        
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
-        # Print the AES key, nonce, and ciphertext before sending after encryptionQQ
-        print(f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n")
+        
+        # Print the AES key, nonce, and ciphertext before sending after encryption
+        str = f"Generated AES key, nonce, and ciphertext before sending after encryption:\nEncrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+        print(str)
+        log_str += str
+
         try:
             if enc_aes_key is None:
                 return None
