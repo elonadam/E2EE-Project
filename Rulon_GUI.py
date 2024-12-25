@@ -23,9 +23,9 @@ def print_auth_token(phone):
     print(f"Auth token for {phone}: {token}")
     return (token, phone)  
 
-def print_encryption_steps(phone):
+def print_encryption_steps():
     global log_str  # Access the global log_str
-    print (f"Encryption steps for {phone}:")
+    print (f"Encryption steps for message:")
     print(log_str)
     print("\n")
     log_str = ""  # Reset the log_str to an empty string
@@ -239,10 +239,14 @@ class RegisterWindow(ctk.CTk):
             private_key_pem, public_key_pem  = generate_rsa_key_pair()
             save_private_key(private_key_pem, phone)
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
+
+            # Log password hashing
+            log_str += f"\033[1m Password for {phone} before hashing:\033[0m {password}\n" \
+                "\033[1mHashed password:\033[0m {hashed_pw}\n"
             
-            # Print secret key and password to terminal
-            str= f"\033[1mPrivate key for {phone}:\033[0m\n{private_key_pem.decode()}\n" \
-                "\033[1mPublic key for {phone}:\033[0m\n{public_key_pem.decode()}\n"
+            # Print RSA key pair and password to terminal
+            str= f"\033[1mGenerated RSA key pair for phone: {phone}\033[0m\n" \
+                "Private Key:\n{private_key_pem.decode()}\nPublic Key:\n{public_key_pem.decode()}\n"
             print(str)
             log_str += str
             

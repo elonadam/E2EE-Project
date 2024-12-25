@@ -23,14 +23,11 @@ def hash_password_bcrypt(password):
     # Hashes a password using bcrypt, returns bcrypt hash
     salt = bcrypt.gensalt()  # Generate a salt to make more unique
     hashed = bcrypt.hashpw(password.encode(), salt)  # result of hash
-    print(f"inside hash_pw func, salt is {salt}, hashed is {hashed}\n")#QQ
     return hashed
 
 
 def verify_password_bcrypt(password, hashed):
     # Verifies a password against a given bcrypt hash, gets password as str from GUI and hashed from DB to compare, return bool
-    print(
-        f"inside verify func, password is {password} hashed as param is {hashed} \n bcrypt computed: {bcrypt.checkpw(password.encode(), hashed)}")#QQ
     return bcrypt.checkpw(password.encode(), hashed)
 
 
