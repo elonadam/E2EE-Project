@@ -241,7 +241,7 @@ class RegisterWindow(ctk.CTk):
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             
             # Print secret key and password to terminal
-            str= f"Password Private key for {phone}:\n{private_key_pem.decode()}\nPublic key for {phone}:\n{public_key_pem.decode()}\n"
+            str= f"Private key for {phone}:\n{private_key_pem.decode()}\nPublic key for {phone}:\n{public_key_pem.decode()}\n"
             print(str)
             log_str += str
             
@@ -381,6 +381,7 @@ class MessagesWindow(ctk.CTk):
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
     def display_messages(self):
+        global log_str
         # Clear existing widgets in the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
@@ -391,7 +392,7 @@ class MessagesWindow(ctk.CTk):
             sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg
 
             # Print the AES key, nonce, and ciphertext before decryption
-            str = f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+            str = f"AES key, nonce, and ciphertext before decryption:\nEncrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
             print(str)
             log_str += str
 
@@ -403,7 +404,7 @@ class MessagesWindow(ctk.CTk):
             content = plaintext_bytes.decode('utf-8')
             
             # Print the AES key, nonce, and ciphertext after decryption
-            str = f"Decrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n"
+            str = f"AES key, nonce, and ciphertext after decryption:\nDecrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n"
             print(str)
             log_str += str
             
@@ -448,7 +449,7 @@ class MessagesWindow(ctk.CTk):
         aes_key = os.urandom(32)  # for aes-256
         
         # Print the AES key and message before encryption
-        str = f"Generated AES key: {aes_key}\nPlaintext: {plain_text}\n"
+        str = f"AES key and message before encryption:\nGenerated AES key: {aes_key}\nPlaintext: {plain_text}\n"
         print(str)
         log_str += str
         
@@ -456,7 +457,7 @@ class MessagesWindow(ctk.CTk):
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         
         # Print the AES key, nonce, and ciphertext before sending after encryption
-        str = f"Generated AES key, nonce, and ciphertext before sending after encryption:\nEncrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+        str = f"AES key, nonce, and ciphertext before sending after encryption:\nEncrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
         print(str)
         log_str += str
 
