@@ -241,7 +241,8 @@ class RegisterWindow(ctk.CTk):
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             
             # Print secret key and password to terminal
-            str= f"Private key for {phone}:\n{private_key_pem.decode()}\nPublic key for {phone}:\n{public_key_pem.decode()}\n"
+            str= f"\033[1mPrivate key for {phone}:\033[0m\n{private_key_pem.decode()}\n" \
+                "\033[1mPublic key for {phone}:\033[0m\n{public_key_pem.decode()}\n"
             print(str)
             log_str += str
             
@@ -392,7 +393,8 @@ class MessagesWindow(ctk.CTk):
             sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg
 
             # Print the AES key, nonce, and ciphertext before decryption
-            str = f"AES key, nonce, and ciphertext before decryption:\nEncrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+            str = f"\033[1mAES key, nonce, and ciphertext before decryption:\033[0m\n" \
+               "Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
             print(str)
             log_str += str
 
@@ -404,7 +406,8 @@ class MessagesWindow(ctk.CTk):
             content = plaintext_bytes.decode('utf-8')
             
             # Print the AES key, nonce, and ciphertext after decryption
-            str = f"AES key, nonce, and ciphertext after decryption:\nDecrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n"
+            str = f"\033[1mAES key, nonce, and ciphertext after decryption:\033[0m" \
+                "\nDecrypted AES key: {aes_key}\nNonce: {nonce}\nSubject: {content}\n"
             print(str)
             log_str += str
             
@@ -444,12 +447,13 @@ class MessagesWindow(ctk.CTk):
         # Send the message
         db = DatabaseManager()
         plain_text = subject + "\nContent: " + content
-        print(f"subject is {subject}, content is {content}")
+        print(f"Subject is {subject}, content is {content}")
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32)  # for aes-256
         
         # Print the AES key and message before encryption
-        str = f"AES key and message before encryption:\nGenerated AES key: {aes_key}\nPlaintext: {plain_text}\n"
+        str = f"\033[1mAES key and message before encryption:\033[0m\n" \
+            "Generated AES key: {aes_key}\nMessage: {plain_text}\n"
         print(str)
         log_str += str
         
@@ -457,7 +461,8 @@ class MessagesWindow(ctk.CTk):
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         
         # Print the AES key, nonce, and ciphertext before sending after encryption
-        str = f"AES key, nonce, and ciphertext before sending after encryption:\nEncrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+        log_str += f"\033[1mAES key, nonce, and ciphertext before sending after encryption:\033[0m\n" \
+                f"Encrypted AES key: {enc_aes_key}\nNonce: {nonce}\nCiphertext: {ciphertext}\n"
         print(str)
         log_str += str
 
