@@ -19,9 +19,7 @@ def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
-    return (token, phone)
-
-
+    return (token, phone)  
 class StartWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -227,10 +225,9 @@ class RegisterWindow(ctk.CTk):
             # Register user in DB using DatabaseManager
             db = DatabaseManager()
 
-            private_key_pem, public_key_pem = generate_rsa_key_pair()
-            # Print secret key to terminal 
-            print(
-                f"Private key for {phone}:\n{private_key_pem.decode()}\n\nPublic key for {phone}:\n{public_key_pem.decode()}\n")
+            private_key_pem, public_key_pem  = generate_rsa_key_pair()
+            # Print secret key to terminal QQ
+            print(f"Private key for {phone}:\n{private_key_pem.decode()}\n\nPublic key for {phone}:\n{public_key_pem.decode()}\n")
             save_private_key(private_key_pem, phone)
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
@@ -378,8 +375,8 @@ class MessagesWindow(ctk.CTk):
         for msg in messages:
             sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg
 
-            # Print the AES key, nonce, and ciphertext before decryption
-            print(f"Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n")
+            # Print the AES key, nonce, and ciphertext before decryptionQQ
+            print(f"Generated AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n")
 
             # Decrypt AES key using our private key
             aes_key = rsa_decrypt_aes_key(enc_aes_key, self.phone)
@@ -387,7 +384,7 @@ class MessagesWindow(ctk.CTk):
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
             content = plaintext_bytes.decode('utf-8')
-            # Print the AES key, nonce, and ciphertext after decryption
+            # Print the AES key, nonce, and ciphertext after decryptionQQ
             print(f"Decrypted AES key: {aes_key}, Nonce: {nonce}, Plaintext: {content}\n")
             # Display as before
             # Create a frame INSIDE the scrollable frame
