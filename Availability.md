@@ -26,4 +26,4 @@
 ---
 
 ### **Conclusion:**
-By leveraging features such as message storage and ACID compliance the system can ensure high availability in most cases. 
+By leveraging features such as message storage and ACID compliance the system can ensure high availability in most cases but not all. 
