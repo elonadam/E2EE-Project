@@ -7,10 +7,8 @@ class DatabaseManager:
         self.conn = sqlite3.connect("data.db")  # connect to the database
         self.c = self.conn.cursor()
 
-    def create_tables(self):  # create tables in DB
-        """
-        Creates the users and messages tables in the SQLite database if not exist
-        """
+    def create_tables(self):
+         #  Creates the users and messages tables in the SQLite database if not exist
 
         try:
             self.c.execute("""
@@ -33,12 +31,12 @@ class DatabaseManager:
                 seen_notification BOOLEAN DEFAULT 0
             );
             """)
-            self.conn.commit()  # commit changes and close the connection
+            self.conn.commit()  # commit changes
             print("Tables created successfully.")
         except sqlite3.Error as e:
             print("Error creating tables:", e)
         finally:
-            self.conn.close()
+            self.conn.close() # close the connection
 
     def add_user(self, user_phone, public_key, user_pw): # adding user to the DB from the GUI
         try:
@@ -47,7 +45,7 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"Error adding user {user_phone}: {e}")
 
-        self.conn.commit()
+        self.conn.commit() # commit changes
 
     def check_user_exists(self, user_phone): # check if user exist to recive the messages
         self.c.execute("SELECT user_phone FROM users WHERE user_phone=?", (user_phone,))
@@ -64,7 +62,7 @@ class DatabaseManager:
         :param iv:
         :return:
         """
-        curr_timestamp = datetime.now().strftime(" %H:%M:%S %d-%m-%Y")  # str type,output = 10:37:46 07-12-2024
+        curr_timestamp = datetime.now().strftime(" %H:%M:%S %d-%m-%Y")  # str type,output ie = 10:37:46 07-12-2024
         try:
             # Insert a single message
             self.c.execute("""
@@ -77,7 +75,7 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f"Error adding message from {sender_num}: {e}")
 
-        # commit changes and close the connection
+        # commit changes
         self.conn.commit()
 
     def fetch_messages_for_user(self, user_phone): # extract messages that were sent to the user from DB
