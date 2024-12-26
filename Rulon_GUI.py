@@ -20,9 +20,12 @@ def print_auth_token(phone):
     print(f"Auth token for {phone}: {token}")
     return (token, phone)  
 
-def print_encryption_steps():
-    global log_str  # Access the global log_str
-    print (f"\033[1mEncryption steps for message:\033[0m")
+def print_encryption_steps(flag):
+    global log_str  # Access the global log_st
+    if flag:
+        print (f"\033[1mEncryption steps for message:\033[0m")
+    else:
+        print (f"\033[1mRegistration steps for user:\033[0m")
     print(log_str+"\n")  # Print the log_str and close the code block
     log_str = ""  # Reset the log_str to an empty string
    
@@ -249,6 +252,7 @@ class RegisterWindow(ctk.CTk):
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
             db.add_user(user_phone=phone, public_key=public_key_pem, user_pw=hashed_pw.decode())
             messagebox.showinfo("Registered", "Registration successful! You can now login.")
+            print_encryption_steps(False)
             self.destroy()
             start_win = StartWindow()
             start_win.mainloop()
@@ -428,7 +432,7 @@ class MessagesWindow(ctk.CTk):
             content_label.pack(fill="x", padx=5)
             
             # Print the encryption steps
-            print_encryption_steps()
+            print_encryption_steps(True)
 
     def send_message(self):
         global log_str
@@ -482,7 +486,7 @@ class MessagesWindow(ctk.CTk):
             self.recipient_var.set("")
             self.subject_var.set("")
             self.content_var.set("")
-            print_encryption_steps()
+            print_encryption_steps(True)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
             return None
