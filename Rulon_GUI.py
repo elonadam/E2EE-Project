@@ -25,7 +25,7 @@ def print_auth_token(phone):
 
 def print_encryption_steps():
     global log_str  # Access the global log_str
-    print (f"Encryption steps for message:")
+    print (f"\033[1mEncryption steps for message:\033[0m")
     print(log_str)
     print("\n")
     log_str = ""  # Reset the log_str to an empty string
@@ -483,6 +483,7 @@ class MessagesWindow(ctk.CTk):
             self.recipient_var.set("")
             self.subject_var.set("")
             self.content_var.set("")
+            print_encryption_steps()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
             return None
