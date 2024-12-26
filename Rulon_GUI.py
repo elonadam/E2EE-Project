@@ -430,6 +430,9 @@ class MessagesWindow(ctk.CTk):
             content_label = ctk.CTkLabel(msg_frame, text=f"Subject: {content}", text_color=TEXT_COLOR, fg_color="#1C1C1C",
                                          anchor="w")
             content_label.pack(fill="x", padx=5)
+            
+            # Print the encryption steps
+            print_encryption_steps()
 
     def send_message(self):
         global log_str
