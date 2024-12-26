@@ -386,9 +386,6 @@ class MessagesWindow(ctk.CTk):
         send_messages = db.seen_notification_sender(self.phone)  # This returns a list of (message_index, recipient_phone)
         
         for message_index, recipient_phone in send_messages:  # Unpack message_index and recipient_phone
-            print("\n\n\nHEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
-            print(f"Message Index: {message_index}, Recipient Phone: {recipient_phone}")
-            print("\n\n\nHEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
     def display_messages(self):
