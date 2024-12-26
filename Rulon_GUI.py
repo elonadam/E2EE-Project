@@ -1,22 +1,21 @@
 import customtkinter as ctk
 from db_manager import DatabaseManager
 from random import randint
-from encryption_funcs import *  # hash_password, verify_password
+from encryption_funcs import * 
 from message import *
 
 # -------------------- Settings --------------------
-ctk.set_appearance_mode("dark")  # "light" or "dark"
-ctk.set_default_color_theme("blue")  # The built-in theme
+ctk.set_appearance_mode("dark")  # dark for sure
+ctk.set_default_color_theme("blue")  # the built in theme
 
-# Color scheme based on the request
+# Color scheme
 COLOR_BG = "#0C0C0C"  # obsidian black
 COLOR_ENTRY = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
-TEXT_COLOR = "#FFFFFF"
+TEXT_COLOR = "#FFFFFF" # white
 
-def print_auth_token(phone):
-    # print token to terminal (for testing)
+def print_auth_token(phone):    # print token to terminal
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
     return (token, phone)  
@@ -32,7 +31,7 @@ def print_encryption_steps(flag):
     print (f"\033[1mEnd of steps.\033[0m")
 
    
-class StartWindow(ctk.CTk):
+class StartWindow(ctk.CTk): # the first window, asks the user to login or register
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Start")
@@ -56,18 +55,19 @@ class StartWindow(ctk.CTk):
                                         corner_radius=15, command=self.open_register)
         register_button.pack(pady=10)
 
-    def open_login(self):
+    def open_login(self): # if user clicked login
         self.destroy()
         login_win = LoginWindow()
         login_win.mainloop()
 
-    def open_register(self):
+    def open_register(self):# if user clicked register
         self.destroy()
         reg_win = RegisterWindow()
         reg_win.mainloop()
 
 
 class RegisterWindow(ctk.CTk):
+# registration window, asks for a number then supplies auth token, after validation asks to create a password 
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Register")
@@ -77,7 +77,8 @@ class RegisterWindow(ctk.CTk):
         # Initialize timer attributes
         self.timer_running = False
         self.time_left = 0
-
+        
+        # for entries
         self.phone_var = ctk.StringVar()
         self.token_var = ctk.StringVar()
         self.password_var = ctk.StringVar()
@@ -137,38 +138,38 @@ class RegisterWindow(ctk.CTk):
         self.set_pw_button = ctk.CTkButton(self, text="Set Password", fg_color=COLOR_BUTTON,
                                            hover_color=COLOR_BUTTON_HOVER, corner_radius=15, command=self.set_password)
 
-    def update_timer(self):
+    def update_timer(self): # timer settings
         if self.time_left > 0:
             self.timer_label.configure(text=f"Time remaining: {self.time_left} seconds")
             self.time_left -= 1
             # Schedule the next update after 1 second
             self.after(1000, self.update_timer)
         else:
-            # Timer expired
+            # Timer expired, disabling button
             self.timer_running = False
             self.token_entry.configure(state="disabled")
             self.validate_token_button.configure(state="disabled")
             self.timer_label.configure(text="Time expired! Request a new token.")
 
-    def clear_phone_placeholder(self, event):
+    def clear_phone_placeholder(self, event): # delete the placeholder cause the user wants to write
         current_text = self.phone_entry.get()
         if current_text == self.phone_placeholder:
             self.phone_entry.delete(0, "end")
             self.phone_entry.configure(text_color=self.normal_text_color)
 
-    def add_phone_placeholder(self, event):
+    def add_phone_placeholder(self, event): # placing the place holder
         current_text = self.phone_entry.get()
         if not current_text:
             self.phone_entry.insert(0, self.phone_placeholder)
             self.phone_entry.configure(text_color=self.placeholder_color)
 
-    def clear_token_placeholder(self, event):
+    def clear_token_placeholder(self, event): # delete the placeholder cause the user wants to write
         current_text = self.token_entry.get()
         if current_text == self.token_placeholder:
             self.token_entry.delete(0, "end")
             self.token_entry.configure(text_color=self.normal_text_color)
 
-    def add_token_placeholder(self, event):
+    def add_token_placeholder(self, event): # placing the place holder
         current_text = self.token_entry.get()
         if not current_text:
             self.token_entry.insert(0, self.token_placeholder)
@@ -198,7 +199,7 @@ class RegisterWindow(ctk.CTk):
         messagebox.showinfo("Token Sent",
                             "Shhhh...Auth token sent securely to terminal. Please enter it below.")
 
-        if not self.timer_running:
+        if not self.timer_running: # start the timer
             self.timer_running = True
             self.time_left = 30
             self.update_timer()
@@ -230,7 +231,7 @@ class RegisterWindow(ctk.CTk):
         else:
             messagebox.showerror("Error", "Invalid token.")
 
-    def set_password(self):
+    def set_password(self): # get the user pass, hash it, store it
         global log_str
         phone = self.phone_var.get()
         password = self.password_var.get()
@@ -291,7 +292,7 @@ class LoginWindow(ctk.CTk):
                                      text_color="black", command=self.login_action)
         login_button.pack(pady=10)
 
-    def login_action(self):
+    def login_action(self): # validate cardentials
         phone = self.phone_var.get()
         password = self.password_var.get()
         db = DatabaseManager()
@@ -309,7 +310,7 @@ class LoginWindow(ctk.CTk):
         else:
             self.invalid_credentials()
 
-    def invalid_credentials(self):
+    def invalid_credentials(self): # raise attempts by 1, max 3
         self.attempt_count += 1
         if self.attempt_count < 3:
             messagebox.showerror("Error", f"Invalid credentials. Attempt {self.attempt_count}/3.")
@@ -318,7 +319,7 @@ class LoginWindow(ctk.CTk):
             self.destroy()
 
 
-class MessagesWindow(ctk.CTk):
+class MessagesWindow(ctk.CTk): # GUI for displaying messages and sending them
     def __init__(self, phone):
         super().__init__()
         self.title("E2EE Messaging - Inbox")
@@ -338,9 +339,7 @@ class MessagesWindow(ctk.CTk):
 
         # Display messages initially
         self.display_messages()
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~
-
+        # notify the senders that this user read the messages
         self.seen_noti_popup()
 
         # Frame for sending messages
@@ -381,14 +380,14 @@ class MessagesWindow(ctk.CTk):
                                     hover_color=COLOR_BUTTON_HOVER, command=self.back_to_start)
         back_button.pack(pady=10, padx=5, anchor='e')
                 
-    def seen_noti_popup(self):
+    def seen_noti_popup(self): # updatinf flag in DB that this user read the message
         db = DatabaseManager()
         send_messages = db.seen_notification_sender(self.phone)  # This returns a list of (message_index, recipient_phone)
         
         for message_index, recipient_phone in send_messages:  # Unpack message_index and recipient_phone
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
-    def display_messages(self):
+    def display_messages(self): # diplaying the messages for this user for DB
         global log_str
         # Clear existing widgets in the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
@@ -422,7 +421,8 @@ class MessagesWindow(ctk.CTk):
             # Create a frame INSIDE the scrollable frame
             msg_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="#1C1C1C")
             msg_frame.pack(fill="x", pady=5, padx=5)
-
+            
+            # Lables
             sender_label = ctk.CTkLabel(msg_frame, text=f"From: {sender}", text_color=TEXT_COLOR, fg_color="#1C1C1C",
                                         anchor="w")
             sender_label.pack(fill="x", padx=5)
@@ -438,7 +438,7 @@ class MessagesWindow(ctk.CTk):
             if log_str:
                 print_encryption_steps(True)
 
-    def send_message(self):
+    def send_message(self): # getting details from entries and send message to DB
         global log_str
         recipient = self.recipient_var.get()
         subject = self.subject_var.get()
@@ -496,10 +496,7 @@ class MessagesWindow(ctk.CTk):
             messagebox.showerror("Error", f"Failed to send message: {e}")
             return None
 
-    def create_scrollable_frame(self, parent):
-        """
-        Creates a scrollable frame inside 'parent' using CTkScrollableFrame.
-        """
+    def create_scrollable_frame(self, parent): # creates a scrollable frame to read more then 3 messages
         scrollable_frame = ctk.CTkScrollableFrame(parent, label_text="")
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
         return scrollable_frame
