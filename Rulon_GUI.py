@@ -2,6 +2,7 @@ import customtkinter as ctk
 from db_manager import DatabaseManager
 from random import randint
 from encryption_funcs import *  # hash_password, verify_password
+from message import *
 
 # -------------------- Settings --------------------
 ctk.set_appearance_mode("dark")  # "light" or "dark"
@@ -254,7 +255,8 @@ class RegisterWindow(ctk.CTk):
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
             db.add_user(user_phone=phone, public_key=public_key_pem, user_pw=hashed_pw.decode())
             messagebox.showinfo("Registered", "Registration successful! You can now login.")
-            print_encryption_steps(False)
+            if log_str: 
+                print_encryption_steps(False)
             self.destroy()
             start_win = StartWindow()
             start_win.mainloop()
@@ -378,13 +380,15 @@ class MessagesWindow(ctk.CTk):
         back_button = ctk.CTkButton(self, text="Logout", fg_color=COLOR_BUTTON,
                                     hover_color=COLOR_BUTTON_HOVER, command=self.back_to_start)
         back_button.pack(pady=10, padx=5, anchor='e')
-
+                
     def seen_noti_popup(self):
-        recipient_phone = self.phone
         db = DatabaseManager()
-        # sender_p = "..."
-        send_messages = db.seen_notification_sender(recipient_phone)
-        for message in send_messages:
+        send_messages = db.seen_notification_sender(self.phone)  # This returns a list of (message_index, recipient_phone)
+        
+        for message_index, recipient_phone in send_messages:  # Unpack message_index and recipient_phone
+            print("\n\n\nHEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
+            print(f"Message Index: {message_index}, Recipient Phone: {recipient_phone}")
+            print("\n\n\nHEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
     def display_messages(self):
@@ -434,7 +438,8 @@ class MessagesWindow(ctk.CTk):
             content_label.pack(fill="x", padx=5)
             
             # Print the encryption steps
-            print_encryption_steps(True)
+            if log_str:
+                print_encryption_steps(True)
 
     def send_message(self):
         global log_str
@@ -488,7 +493,8 @@ class MessagesWindow(ctk.CTk):
             self.recipient_var.set("")
             self.subject_var.set("")
             self.content_var.set("")
-            print_encryption_steps(True)
+            if log_str:
+                print_encryption_steps(True)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
             return None

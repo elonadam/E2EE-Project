@@ -107,21 +107,30 @@ class DatabaseManager:
             print(f"Error fetching public key for user {phone}: {e}")
             return False
 
-    def seen_notification_sender(self, sender_p): # iterate through the messages to check if the user read the message to notify the sender
-        # The query chose only messages that delivered to recipient and sender didn't got notification yet
+    def seen_notification_sender(self, sender_p): 
+        """
+        Iterate through the messages to check if the user read the message to notify the sender. 
+        Returns both the message indexes and recipient IDs.
+        """
+        # The query selects messages delivered to the recipient, for which the sender hasn't been notified yet.
         query = """ 
-            SELECT message_index FROM messages WHERE
-             sender_phone = ? 
-             AND received_flag = 1 
-             AND (seen_notification != 1 OR seen_notification IS NULL)"""
+            SELECT message_index, recipient_phone FROM messages WHERE
+            sender_phone = ? 
+            AND received_flag = 1 
+            AND (seen_notification != 1 OR seen_notification IS NULL)
+        """
         self.c.execute(query, (sender_p,))
         results = self.c.fetchall()
-        message_indexes = [row[0] for row in results]
 
-        if message_indexes: # true if at least one message
-            placeholders = ",".join("?" * len(message_indexes)) # creates a sequence of '?' in the length of
-            # message_indexes
+        if results:  # True if at least one message exists
+            message_indexes = [row[0] for row in results]  # Extract message indexes
+            placeholders = ",".join("?" * len(message_indexes))  # Create placeholders for SQL query
             update_query = f"UPDATE messages SET seen_notification = 1 WHERE message_index IN ({placeholders})"
             self.c.execute(update_query, message_indexes)
             self.conn.commit()
-        return message_indexes
+
+            # Return both message indexes and recipient IDs
+            return [(row[0], row[1]) for row in results]
+
+        return []
+
