@@ -262,7 +262,7 @@ Completeness of a message guarantees that it reaches the intended recipient full
 
 ### **Assumptions**
    - Messages don't have to be deleted.
-   - QQ
+   - When registered phone numbers will contain only numbers and will start with 5.
 
 
 ### **Irrelevent Consule Prints**
