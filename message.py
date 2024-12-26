@@ -1,6 +1,3 @@
-from datetime import datetime
-
-
 class Message:
     """
     represent a single message
