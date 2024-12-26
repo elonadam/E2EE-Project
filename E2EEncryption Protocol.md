@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS messages (
     ciphertext TEXT,
     iv TEXT,
     date TEXT,
-    blue_v BOOLEAN
+    received_flag BOOLEAN
 );
 ```
 
@@ -81,24 +81,24 @@ CREATE TABLE IF NOT EXISTS messages (
   - `ciphertext`: The AES-encrypted message content.
   - `iv`: Initialization Vector used for AES encryption.
   - `date`: Timestamp of when the message was added (e.g., `10:37:46 07-12-2024`).
-  - `blue_v`: Boolean flag indicating whether the message was acknowledged (true if acknowledged).
+  - `received_flag`: Boolean flag indicating whether the message was acknowledged (true if acknowledged).
 
 - **Storage Operations**:
-  - **Adding a Message**: The `add_message` function inserts a new message, including a timestamp and an unacknowledged flag (`blue_v = False`).
+  - **Adding a Message**: The `add_message` function inserts a new message, including a timestamp and an unacknowledged flag (`received_flag = False`).
     ```python
     self.c.execute("""
-    INSERT INTO messages (sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, blue_v)
+    INSERT INTO messages (sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, received_flag)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, curr_timestamp, False))
     ```
-  - **Fetching Messages**: The `fetch_messages_for_user` function retrieves all messages for a given recipient and updates their acknowledgment status (`blue_v = True`).
+  - **Fetching Messages**: The `fetch_messages_for_user` function retrieves all messages for a given recipient and updates their acknowledgment status (`received_flag = True`).
     ```python
-    self.c.execute("UPDATE messages SET blue_v = ? WHERE recipient_phone = ? AND blue_v = ?", (True, user_phone, 0))
-    self.c.execute("SELECT sender_phone, recipient_phone, encrypted_aes_key, iv, ciphertext, date, blue_v FROM messages WHERE recipient_phone=?", (user_phone,))
+    self.c.execute("UPDATE messages SET received_flag = ? WHERE recipient_phone = ? AND received_flag = ?", (True, user_phone, 0))
+    self.c.execute("SELECT sender_phone, recipient_phone, encrypted_aes_key, iv, ciphertext, date, received_flag FROM messages WHERE recipient_phone=?", (user_phone,))
     ```
-  - **Acknowledging Messages**: The `acknowledge_message` function updates the `blue_v` flag for a specific message index.
+  - **Acknowledging Messages**: The `acknowledge_message` function updates the `received_flag` flag for a specific message index.
     ```python
-    self.c.execute("UPDATE messages SET blue_v = ? WHERE message_index = ?", (True, message_index))
+    self.c.execute("UPDATE messages SET received_flag = ? WHERE message_index = ?", (True, message_index))
     ```
 
 ### **Protocol Workflow**
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS messages (
         "encrypted_aes_key": "<RSA-encrypted AES key>",
         "ciphertext": "<AES-encrypted message>",
         "iv": "<Initialization Vector>",
-        "blue_v": "<Message received flag>"
+        "received_flag": "<Message received flag>"
     }
     ```
     
@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS messages (
       - Decrypting the message with AES is efficient and ensures that the original plaintext message is retrieved securely.
 
 4. **Send Acknowledgment**:
-   - The recipient sends an acknowledgment, which updates the `blue_v` flag in the `messages` table via the `acknowledge_message` function.
+   - The recipient sends an acknowledgment, which updates the `received_flag` flag in the `messages` table via the `acknowledge_message` function.
    - The acknowledgment contains:
      - **Recipient's identifier**.
      - **Message ID** (the time that the message was sent).
@@ -205,13 +205,13 @@ CREATE TABLE IF NOT EXISTS messages (
 ### **Offline Delivery**
 
 1. **Storing Offline Messages**:
-   - If the recipient is offline, the server stores the message in the `messages` table with `blue_v = False`.
+   - If the recipient is offline, the server stores the message in the `messages` table with `received_flag = False`.
 
 2. **Delivery Upon Reconnection**:
    - The server delivers all stored messages to the recipient when they reconnect.
 
 3. **Cleanup**:
-   - Once the recipient acknowledges a message, it is flagged as acknowledged (`blue_v = True`), ensuring reliable delivery tracking.
+   - Once the recipient acknowledges a message, it is flagged as acknowledged (`received_flag = True`), ensuring reliable delivery tracking.
 
 
 ### **Ensuring Completeness of Messages (Source and Content)**
@@ -233,11 +233,11 @@ Completeness of a message guarantees that it reaches the intended recipient full
      - Initialization Vector (IV).
      - Encrypted message content (`ciphertext`).
      - Timestamp (`date`).
-     - Acknowledgment flag (`blue_v`).
+     - Acknowledgment flag (`received_flag`).
 
 3. **Acknowledgment Tracking**
-   - Each message is marked as unacknowledged (`blue_v = False`) upon insertion into the database.
-   - When the recipient opens a message, the acknowledgment flag is updated to `blue_v = True`.
+   - Each message is marked as unacknowledged (`received_flag = False`) upon insertion into the database.
+   - When the recipient opens a message, the acknowledgment flag is updated to `received_flag = True`.
 
 4. **Handling Offline Recipients**
    - Messages for offline recipients are stored in the `messages` table.
