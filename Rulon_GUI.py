@@ -30,12 +30,19 @@ def print_encryption_steps(flag):
     log_str = ""  # Reset the log_str to an empty string
     print (f"\033[1mEnd of steps.\033[0m")
 
-   
+def get_center_position(screen_width, screen_height, window_width, window_height):
+    # Calculate the (x, y) position to center a window on the screen.
+    x = int((screen_width - window_width) / 2)
+    y = int((screen_height - window_height) / 2)
+    return x, y
+
+
 class StartWindow(ctk.CTk): # the first window, asks the user to login or register
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Start")
-        self.geometry("300x200")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 300, 200)
+        self.geometry(f"300x200+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         self.phone_var = ctk.StringVar()
@@ -71,7 +78,8 @@ class RegisterWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Register")
-        self.geometry("350x250")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 350, 250)
+        self.geometry(f"350x250+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         # Initialize timer attributes
@@ -269,7 +277,8 @@ class LoginWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Login")
-        self.geometry("300x200")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 300, 200)
+        self.geometry(f"300x200+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         self.attempt_count = 0  # track login attempts
@@ -323,7 +332,8 @@ class MessagesWindow(ctk.CTk): # GUI for displaying messages and sending them
     def __init__(self, phone):
         super().__init__()
         self.title("E2EE Messaging - Inbox")
-        self.geometry("600x700")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 600, 700)
+        self.geometry(f"600x700+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         self.phone = phone
