@@ -10,7 +10,7 @@ class Message:
         self.sender_num = int(sender_num)
         self.recipient_num = int(recipient_num)
         self.encrypted_aes_key = encrypted_aes_key
-        self.ciphertext = ciphertext 
+        self.ciphertext = ciphertext # the encrypted message
         self.date = date # timestamp using date class
         self.iv = iv # used later in encryption
         self.received_flag = received_flag # if the message reached the user either online or not, equals true
