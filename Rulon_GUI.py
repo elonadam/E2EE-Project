@@ -18,7 +18,7 @@ TEXT_COLOR = "#FFFFFF"
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
-    print(f"Auth token for {phone}: {token}")
+    print(f"Authentication token for {phone}: {token}")
     return (token, phone)  
 
 def print_encryption_steps(flag):
