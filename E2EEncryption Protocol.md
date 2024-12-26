@@ -259,3 +259,23 @@ Completeness of a message guarantees that it reaches the intended recipient full
 | **Acknowledgment**       | Mandatory acknowledgment ensures message delivery and decryption confirmation.    |
 | **Resistance to MITM**   | RSA encryption prevents unauthorized decryption without the private key. |
 | **Offline Delivery**     | Server securely stores encrypted messages for offline recipients.          |
+
+### **Assumptions**
+   - Messages don't have to be deleted.
+   - QQ
+
+
+### **Irrelevent Consule Prints**
+   - invalid command name "1873777213568update"
+      while executing
+   "1873777213568update"
+      ("after" script)
+   - invalid command name "1873784369472check_dpi_scaling"
+      while executing
+   "1873784369472check_dpi_scaling"
+      ("after" script)
+   - invalid command name "1873784369600_click_animation"
+      while executing
+   "1873784369600_click_animation"
+      ("after" script)
+

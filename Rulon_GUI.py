@@ -28,6 +28,8 @@ def print_encryption_steps(flag):
         print (f"\033[1mRegistration steps for user:\033[0m")
     print(log_str+"\n")  # Print the log_str and close the code block
     log_str = ""  # Reset the log_str to an empty string
+    print (f"\033[1mEnd of steps.\033[0m")
+
    
 class StartWindow(ctk.CTk):
     def __init__(self):
@@ -240,8 +242,8 @@ class RegisterWindow(ctk.CTk):
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
 
             # Log password hashing
-            log_str += f"\033[1m Password for {phone} before hashing:\033[0m {password}\n" \
-                "\033[1mHashed password:\033[0m {hashed_pw}\n"
+            log_str += f"\033[1mPassword for {phone} before hashing:\033[0m {password}\n" \
+                f"\033[1mHashed password:\033[0m {hashed_pw}\n"
             
             # Print RSA key pair and password to terminal
             str= f"\033[1mGenerated RSA key pair for phone: {phone}\033[0m\n" \
@@ -394,7 +396,7 @@ class MessagesWindow(ctk.CTk):
         db = DatabaseManager()
         messages = db.fetch_messages_for_user(self.phone)
         for msg in messages:
-            sender, self.phone, enc_aes_key, nonce, ciphertext, date, blue_v = msg
+            sender, self.phone, enc_aes_key, nonce, ciphertext, date, received_flag = msg
 
             # Print the AES key, nonce, and ciphertext before decryption
             str = f"\033[1mAES key, nonce, and ciphertext before decryption:\033[0m\n" \
@@ -468,7 +470,7 @@ class MessagesWindow(ctk.CTk):
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
         
         # Print the AES key, nonce, and ciphertext before sending after encryption
-        log_str += f"\033[1mAES key, nonce, and ciphertext before sending after encryption:\033[0m\n" \
+        str = f"\n\033[1mAES key, nonce, and ciphertext before sending after encryption:\033[0m\n" \
                 f"Encrypted AES key: {enc_aes_key}\nNonce: {nonce}\nCiphertext: {ciphertext}\n"
         print(str)
         log_str += str

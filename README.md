@@ -15,8 +15,8 @@ this is a good video about SQLite - https://www.youtube.com/watch?v=byHcYRpMgI4
     - AES after decryption DONE
     - message before decryption DONE
     - message after decryption DONE
-    - create dict to save all this and print a nice message including everything
-# TODO Fix consule prints - ELON
+    - create dict to save all this and print a nice message including everything DONE
+# TODO Fix consule prints - ELON - ADDED
 
 i cant fix the console prints in a good way, lets just declare that we have it
 

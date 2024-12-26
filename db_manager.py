@@ -29,7 +29,7 @@ class DatabaseManager:
                 ciphertext TEXT,
                 iv TEXT,
                 date TEXT,
-                blue_v BOOLEAN DEFAULT 0,
+                received_flag BOOLEAN DEFAULT 0,
                 seen_notification BOOLEAN DEFAULT 0
             );
             """)
@@ -68,10 +68,10 @@ class DatabaseManager:
         try:
             # Insert a single message
             self.c.execute("""
-                INSERT INTO messages (sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, blue_v)
+                INSERT INTO messages (sender_phone, recipient_phone, encrypted_aes_key, ciphertext, iv, date, received_flag)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""",
                            (sender_num, recipient_num, encrypted_aes_key, ciphertext, iv, curr_timestamp, False))
-            # blue_v will be checked later, date is not provide but assigned here
+            # received_flag will be checked later, date is not provide but assigned here
 
             print(f"message from {sender_num} to {recipient_num} added successfully!")
         except sqlite3.Error as e:
@@ -82,10 +82,10 @@ class DatabaseManager:
 
     def fetch_messages_for_user(self, user_phone): # extract messages that were sent to the user from DB
 
-        self.c.execute("UPDATE messages SET blue_v = ? WHERE recipient_phone = ? AND blue_v = ?", (True, user_phone, 0))
+        self.c.execute("UPDATE messages SET received_flag = ? WHERE recipient_phone = ? AND received_flag = ?", (True, user_phone, 0))
         self.conn.commit()
         self.c.execute(
-            "SELECT sender_phone, recipient_phone, encrypted_aes_key, iv, ciphertext, date, blue_v FROM messages WHERE recipient_phone=?",
+            "SELECT sender_phone, recipient_phone, encrypted_aes_key, iv, ciphertext, date, received_flag FROM messages WHERE recipient_phone=?",
             (user_phone,))
         return self.c.fetchall()
 
@@ -112,7 +112,7 @@ class DatabaseManager:
         query = """ 
             SELECT message_index FROM messages WHERE
              sender_phone = ? 
-             AND blue_v = 1 
+             AND received_flag = 1 
              AND (seen_notification != 1 OR seen_notification IS NULL)"""
         self.c.execute(query, (sender_p,))
         results = self.c.fetchall()

@@ -62,13 +62,8 @@ def load_public_key(public_key_pem: bytes):
         public_key_pem = public_key_pem[0]
     if isinstance(public_key_pem, str):  # Convert string to bytes
         public_key_pem = public_key_pem.encode('utf-8')
-
     try:
-        public_key = serialization.load_pem_public_key(public_key_pem, backend=default_backend())
-        str = f"\033[1mLoaded public key key:\033[0m\n{public_key}.\n"
-        print(str)
-        log_str += str + "\n"
-        return public_key
+        return serialization.load_pem_public_key(public_key_pem, backend=default_backend())
     except Exception as e:
         # Display the message box instead of raising an error
         messagebox.showerror(
@@ -83,7 +78,7 @@ def load_private_key(user_phone: int):
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "rb") as f:
         encrypted_private_key = f.read()
-        str = f"\033[1mLoaded private key:\033[0m\{encrypted_private_key} and this type is {type(encrypted_private_key)}.\n"
+        str = f"\033[1mLoaded private key:\033[0m\n{encrypted_private_key} and this type is {type(encrypted_private_key)}.\n"
         print(str)
         log_str += str + "\n"
     return encrypted_private_key
