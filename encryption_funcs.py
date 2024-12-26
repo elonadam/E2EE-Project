@@ -17,7 +17,8 @@ bcrypt.checkpw() verifies a plain-text password against a stored hash.
 don't need to store the salt separately with bcrypt; it is embedded in the hash itself.
 
 """
-
+# Global variable to store logs
+log_str = ""
 
 def hash_password_bcrypt(password):
     # Hashes a password using bcrypt, returns bcrypt hash
@@ -63,21 +64,28 @@ def load_public_key(public_key_pem: bytes):
         public_key_pem = public_key_pem.encode('utf-8')
 
     try:
-        return serialization.load_pem_public_key(public_key_pem, backend=default_backend())
+        public_key = serialization.load_pem_public_key(public_key_pem, backend=default_backend())
+        str = f"\033[1mLoaded public key key:\033[0m\n{public_key}.\n"
+        print(str)
+        log_str += str + "\n"
+        return public_key
     except Exception as e:
         # Display the message box instead of raising an error
         messagebox.showerror(
             title="Error",
-            message="Cannot send message to unregister phone number."
+            message="Cannot send message to unregistered phone number."
         )
         return None
 
 
 def load_private_key(user_phone: int):
+    global log_str
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "rb") as f:
         encrypted_private_key = f.read()
-        print(f"inside load private key: loaded {encrypted_private_key} and this type is {type(encrypted_private_key)}")
+        str = f"\033[1mLoaded private key:\033[0m\{encrypted_private_key} and this type is {type(encrypted_private_key)}.\n"
+        print(str)
+        log_str += str + "\n"
     return encrypted_private_key
 
 

@@ -14,9 +14,6 @@ COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
 TEXT_COLOR = "#FFFFFF"
 
-# Global variable to store logs
-log_str = ""
-
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
@@ -26,8 +23,7 @@ def print_auth_token(phone):
 def print_encryption_steps():
     global log_str  # Access the global log_str
     print (f"\033[1mEncryption steps for message:\033[0m")
-    print(log_str)
-    print("\n")
+    print(log_str+"\n")  # Print the log_str and close the code block
     log_str = ""  # Reset the log_str to an empty string
    
 class StartWindow(ctk.CTk):
@@ -246,7 +242,7 @@ class RegisterWindow(ctk.CTk):
             
             # Print RSA key pair and password to terminal
             str= f"\033[1mGenerated RSA key pair for phone: {phone}\033[0m\n" \
-                "Private Key:\n{private_key_pem.decode()}\nPublic Key:\n{public_key_pem.decode()}\n"
+                f"Private Key:\n{private_key_pem.decode()}\nPublic Key:\n{public_key_pem.decode()}\n"
             print(str)
             log_str += str
             
@@ -398,7 +394,7 @@ class MessagesWindow(ctk.CTk):
 
             # Print the AES key, nonce, and ciphertext before decryption
             str = f"\033[1mAES key, nonce, and ciphertext before decryption:\033[0m\n" \
-               "Encrypted AES key: {enc_aes_key}, Nonce: {nonce}, Ciphertext: {ciphertext}\n"
+               f"Encrypted AES key: {enc_aes_key} \nNonce: {nonce} \nCiphertext: {ciphertext}\n"
             print(str)
             log_str += str
 
@@ -411,7 +407,7 @@ class MessagesWindow(ctk.CTk):
             
             # Print the AES key, nonce, and ciphertext after decryption
             str = f"\033[1mAES key, nonce, and ciphertext after decryption:\033[0m" \
-                "\nDecrypted AES key: {aes_key}\nNonce: {nonce}\nSubject: {content}\n"
+                f"\nDecrypted AES key: {aes_key}\nNonce: {nonce}\nSubject: {content}\n"
             print(str)
             log_str += str
             
@@ -460,7 +456,7 @@ class MessagesWindow(ctk.CTk):
         
         # Print the AES key and message before encryption
         str = f"\033[1mAES key and message before encryption:\033[0m\n" \
-            "Generated AES key: {aes_key}\nMessage: {plain_text}\n"
+            f"Generated AES key: {aes_key}\nSubject: {plain_text}"
         print(str)
         log_str += str
         
