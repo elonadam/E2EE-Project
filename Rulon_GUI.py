@@ -174,9 +174,14 @@ class RegisterWindow(ctk.CTk):
             self.token_entry.insert(0, self.token_placeholder)
             self.token_entry.configure(text_color=self.placeholder_color)
 
-    def get_token(self):
+    def SendBySecureChannel(self):
         """
-        generate and store token and phone as instance vars, self.stored_token, self.stored_phone
+            Generate and store an authentication token and phone number as instance variables:
+            - `self.stored_token`
+            - `self.stored_phone`
+
+            Ensures that the phone number entered is valid (starts with '5') and not already registered in the database.
+            If valid, a token is generated and sent securely, and a timer for input is initiated.
         """
         phone = self.phone_var.get()
         self.token_entry.configure(state="normal")
