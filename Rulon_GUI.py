@@ -1,8 +1,7 @@
 import customtkinter as ctk
-from db_manager import DatabaseManager, seen_notification_sender
+from db_manager import DatabaseManager
 from random import randint
 from encryption_funcs import *  # hash_password, verify_password
-from message import *
 
 # -------------------- Settings --------------------
 ctk.set_appearance_mode("dark")  # "light" or "dark"
@@ -15,28 +14,38 @@ COLOR_BUTTON = "#A9ACB6"  # aluminum gray
 COLOR_BUTTON_HOVER = "#800020"  # burgundy
 TEXT_COLOR = "#FFFFFF"
 
+
 def print_auth_token(phone):
     # print token to terminal (for testing)
     token = randint(100000, 999999)
     print(f"Auth token for {phone}: {token}")
-    return (token, phone)  
+    return (token, phone)
+
 
 def print_encryption_steps(flag):
     global log_str  # Access the global log_st
     if flag:
-        print (f"\033[1mEncryption steps for message:\033[0m")
+        print(f"\033[1mEncryption steps for message:\033[0m")
     else:
-        print (f"\033[1mRegistration steps for user:\033[0m")
-    print(log_str+"\n")  # Print the log_str and close the code block
+        print(f"\033[1mRegistration steps for user:\033[0m")
+    print(log_str + "\n")  # Print the log_str and close the code block
     log_str = ""  # Reset the log_str to an empty string
-    print (f"\033[1mEnd of steps.\033[0m")
+    print(f"\033[1mEnd of steps.\033[0m")
 
-   
+
+def get_center_position(screen_width, screen_height, window_width, window_height):
+    # Calculate the (x, y) position to center a window on the screen.
+    x = int((screen_width - window_width) / 2)
+    y = int((screen_height - window_height) / 2)
+    return x, y
+
+
 class StartWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Start")
-        self.geometry("300x200")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 300, 200)
+        self.geometry(f"300x200+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         self.phone_var = ctk.StringVar()
@@ -71,7 +80,8 @@ class RegisterWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Register")
-        self.geometry("350x250")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 350, 250)
+        self.geometry(f"350x250+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         # Initialize timer attributes
@@ -107,7 +117,8 @@ class RegisterWindow(ctk.CTk):
         self.phone_entry.bind("<FocusOut>", self.add_phone_placeholder)
 
         get_token_button = ctk.CTkButton(self, text="Get Auth Token", fg_color=COLOR_BUTTON, corner_radius=15,
-                                         text_color="black", hover_color=COLOR_BUTTON_HOVER, command=self.get_token)
+                                         text_color="black", hover_color=COLOR_BUTTON_HOVER,
+                                         command=self.SendBySecureChannel)
         get_token_button.pack(pady=5)
 
         # Create Entry with placeholder
@@ -186,8 +197,8 @@ class RegisterWindow(ctk.CTk):
         phone = self.phone_var.get()
         self.token_entry.configure(state="normal")
         self.validate_token_button.configure(state="normal")
-        if not phone.startswith("5"):
-            messagebox.showerror("Error", "Please enter a phone number starting with 5.")
+        if not phone.startswith("5") or len(phone) > 10 or not phone.isdigit():
+            messagebox.showerror("Error", "Please enter a phone number starting with 5 and less then 11 digits.")
             return
 
         db = DatabaseManager()
@@ -243,24 +254,24 @@ class RegisterWindow(ctk.CTk):
             # Register user in DB using DatabaseManager
             db = DatabaseManager()
 
-            private_key_pem, public_key_pem  = generate_rsa_key_pair()
+            private_key_pem, public_key_pem = generate_rsa_key_pair()
             save_private_key(private_key_pem, phone)
             hashed_pw = hash_password_bcrypt(password)  # Hash password using bcrypt
 
             # Log password hashing
             log_str += f"\033[1mPassword for {phone} before hashing:\033[0m {password}\n" \
-                f"\033[1mHashed password:\033[0m {hashed_pw}\n"
-            
+                       f"\033[1mHashed password:\033[0m {hashed_pw}\n"
+
             # Print RSA key pair and password to terminal
-            str= f"\033[1mGenerated RSA key pair for phone: {phone}\033[0m\n" \
-                f"Private Key:\n{private_key_pem.decode()}\nPublic Key:\n{public_key_pem.decode()}\n"
+            str = f"\033[1mGenerated RSA key pair for phone: {phone}\033[0m\n" \
+                  f"Private Key:\n{private_key_pem.decode()}\nPublic Key:\n{public_key_pem.decode()}\n"
             print(str)
             log_str += str
-            
+
             # Note: hashed_pw is bytes. We'll store it as a string in the DB.
             db.add_user(user_phone=phone, public_key=public_key_pem, user_pw=hashed_pw.decode())
             messagebox.showinfo("Registered", "Registration successful! You can now login.")
-            if log_str: 
+            if log_str:
                 print_encryption_steps(False)
             self.destroy()
             start_win = StartWindow()
@@ -273,7 +284,8 @@ class LoginWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("E2EE Messaging - Login")
-        self.geometry("300x200")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 300, 200)
+        self.geometry(f"300x200+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         self.attempt_count = 0  # track login attempts
@@ -327,7 +339,8 @@ class MessagesWindow(ctk.CTk):
     def __init__(self, phone):
         super().__init__()
         self.title("E2EE Messaging - Inbox")
-        self.geometry("600x700")
+        x, y = get_center_position(self.winfo_screenwidth(), self.winfo_screenheight(), 600, 700)
+        self.geometry(f"600x700+{x}+{y}")
         self.configure(bg=COLOR_BG)
 
         self.phone = phone
@@ -360,21 +373,24 @@ class MessagesWindow(ctk.CTk):
         recipient_label = ctk.CTkLabel(send_frame, text="Recipient Phone:", text_color="white", fg_color="#1C1C1C")
         recipient_label.pack(pady=5, padx=5, anchor='w')
         self.recipient_var = ctk.StringVar()
-        recipient_entry = ctk.CTkEntry(send_frame, textvariable=self.recipient_var,text_color=COLOR_BG, fg_color=COLOR_ENTRY)
+        recipient_entry = ctk.CTkEntry(send_frame, textvariable=self.recipient_var, text_color=COLOR_BG,
+                                       fg_color=COLOR_ENTRY)
         recipient_entry.pack(pady=5, padx=5, anchor='w')
 
         # Subject Entry
         subject_label = ctk.CTkLabel(send_frame, text="Subject:", text_color="white", fg_color="#1C1C1C")
         subject_label.pack(pady=5, padx=5, anchor='w')
         self.subject_var = ctk.StringVar()
-        subject_entry = ctk.CTkEntry(send_frame, textvariable=self.subject_var,text_color=COLOR_BG, fg_color=COLOR_ENTRY)
+        subject_entry = ctk.CTkEntry(send_frame, textvariable=self.subject_var, text_color=COLOR_BG,
+                                     fg_color=COLOR_ENTRY)
         subject_entry.pack(pady=5, padx=5, anchor='w')
 
         # Content Entry just single line for simplicity
         content_label = ctk.CTkLabel(send_frame, text="Content:", text_color="white", fg_color="#1C1C1C")
         content_label.pack(pady=5, padx=5, anchor='w')
         self.content_var = ctk.StringVar()
-        content_entry = ctk.CTkEntry(send_frame, textvariable=self.content_var, fg_color=COLOR_ENTRY,text_color=COLOR_BG, width=400)
+        content_entry = ctk.CTkEntry(send_frame, textvariable=self.content_var, fg_color=COLOR_ENTRY,
+                                     text_color=COLOR_BG, width=400)
         content_entry.pack(pady=5, padx=5, anchor='w')
 
         send_button = ctk.CTkButton(send_frame, text="Send Message", fg_color=COLOR_BUTTON,
@@ -385,15 +401,14 @@ class MessagesWindow(ctk.CTk):
         back_button = ctk.CTkButton(self, text="Logout", fg_color=COLOR_BUTTON,
                                     hover_color=COLOR_BUTTON_HOVER, command=self.back_to_start)
         back_button.pack(pady=10, padx=5, anchor='e')
-                
+
     def seen_noti_popup(self):
         db = DatabaseManager()
-        send_messages = db.seen_notification_sender(self.phone)  # This returns a list of (message_index, recipient_phone)
-        
+        send_messages = db.seen_notification_sender(
+            self.phone)  # This returns a list of (message_index, recipient_phone)
+
         for message_index, recipient_phone in send_messages:  # Unpack message_index and recipient_phone
-            print("\n\n\nHEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
             print(f"Message Index: {message_index}, Recipient Phone: {recipient_phone}")
-            print("\n\n\nHEYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\n")
             messagebox.showinfo(title="Message was read!", message=f"Message to {recipient_phone} was read")
 
     def display_messages(self):
@@ -409,7 +424,7 @@ class MessagesWindow(ctk.CTk):
 
             # Print the AES key, nonce, and ciphertext before decryption
             str = f"\033[1mAES key, nonce, and ciphertext before decryption:\033[0m\n" \
-               f"Encrypted AES key: {enc_aes_key} \nNonce: {nonce} \nCiphertext: {ciphertext}\n"
+                  f"Encrypted AES key: {enc_aes_key} \nNonce: {nonce} \nCiphertext: {ciphertext}\n"
             print(str)
             log_str += str
 
@@ -419,13 +434,13 @@ class MessagesWindow(ctk.CTk):
             # Decrypt message
             plaintext_bytes = decrypt_message_with_aes(aes_key, nonce, ciphertext)
             content = plaintext_bytes.decode('utf-8')
-            
+
             # Print the AES key, nonce, and ciphertext after decryption
             str = f"\033[1mAES key, nonce, and ciphertext after decryption:\033[0m" \
-                f"\nDecrypted AES key: {aes_key}\nNonce: {nonce}\nSubject: {content}\n"
+                  f"\nDecrypted AES key: {aes_key}\nNonce: {nonce}\nSubject: {content}\n"
             print(str)
             log_str += str
-            
+
             # Display as before
             # Create a frame INSIDE the scrollable frame
             msg_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="#1C1C1C")
@@ -438,10 +453,11 @@ class MessagesWindow(ctk.CTk):
             date_label = ctk.CTkLabel(msg_frame, text=f"Date: {date}", text_color=COLOR_ENTRY, fg_color="#1C1C1C",
                                       anchor="w")
             date_label.pack(fill="x", padx=5)
-            content_label = ctk.CTkLabel(msg_frame, text=f"Subject: {content}", text_color=TEXT_COLOR, fg_color="#1C1C1C",
+            content_label = ctk.CTkLabel(msg_frame, text=f"Subject: {content}", text_color=TEXT_COLOR,
+                                         fg_color="#1C1C1C",
                                          anchor="w")
             content_label.pack(fill="x", padx=5)
-            
+
             # Print the encryption steps
             if log_str:
                 print_encryption_steps(True)
@@ -469,19 +485,19 @@ class MessagesWindow(ctk.CTk):
         print(f"Subject is {subject}, content is {content}")
         recipient_public_key_pem = db.get_user_public_key(recipient)
         aes_key = os.urandom(32)  # for aes-256
-        
+
         # Print the AES key and message before encryption
         str = f"\033[1mAES key and message before encryption:\033[0m\n" \
-            f"Generated AES key: {aes_key}\nSubject: {plain_text}"
+              f"Generated AES key: {aes_key}\nSubject: {plain_text}"
         print(str)
         log_str += str
-        
+
         nonce, ciphertext = encrypt_message_with_aes(aes_key, plain_text)
         enc_aes_key = rsa_encrypt_aes_key(aes_key, recipient_public_key_pem)
-        
+
         # Print the AES key, nonce, and ciphertext before sending after encryption
         str = f"\n\033[1mAES key, nonce, and ciphertext before sending after encryption:\033[0m\n" \
-                f"Encrypted AES key: {enc_aes_key}\nNonce: {nonce}\nCiphertext: {ciphertext}\n"
+              f"Encrypted AES key: {enc_aes_key}\nNonce: {nonce}\nCiphertext: {ciphertext}\n"
         print(str)
         log_str += str
 

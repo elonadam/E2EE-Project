@@ -8,9 +8,9 @@ from cryptography.hazmat.primitives.serialization import NoEncryption
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-
 # Global variable to store logs
 log_str = ""
+
 
 def hash_password_bcrypt(password):
     # Hashes a password using bcrypt, returns bcrypt hash
@@ -36,7 +36,7 @@ def generate_rsa_key_pair():
     private_key_pem = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=NoEncryption()  # not using passphrse
+        encryption_algorithm=NoEncryption()  # not using passphrase
     )
 
     # Serialize public key
@@ -65,7 +65,7 @@ def load_public_key(public_key_pem: bytes):
         return None
 
 
-def load_private_key(user_phone: int): # load private key from local storge
+def load_private_key(user_phone: int):  # load private key from local storge
     global log_str
     filename = f"private_keys/{user_phone}_private_key.pem.enc"
     with open(filename, "rb") as f:
@@ -89,7 +89,7 @@ def save_private_key(encrypted_private_key, user_phone):
         f.write(encrypted_private_key)
 
 
-def rsa_encrypt_aes_key(aes_key, recipient_public_key_pem): # encrypting the aes with rsa
+def rsa_encrypt_aes_key(aes_key, recipient_public_key_pem):  # encrypting the aes with rsa
     try:
         recipient_public_key = load_public_key(recipient_public_key_pem)
         enc_aes_key = recipient_public_key.encrypt(
@@ -143,7 +143,7 @@ def encrypt_message_with_aes(aes_key, plaintext):
     return nonce, ciphertext
 
 
-def decrypt_message_with_aes(aes_key, nonce, ciphertext) # as it sounds
+def decrypt_message_with_aes(aes_key, nonce, ciphertext):  # as it sounds
     aesgcm = AESGCM(aes_key)
     try:
         return aesgcm.decrypt(nonce, ciphertext, None)
