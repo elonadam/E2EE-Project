@@ -1,6 +1,6 @@
 made by:
-### **Elon Adam 208126318**
-### **Ruth Stiebel 324197409**
+### **Elon Adam**
+### **Ruth Stiebel **
 
 ### **End-to-End Encrypted Messaging Protocol Using RSA and AES**
 
