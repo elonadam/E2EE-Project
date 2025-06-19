@@ -6,6 +6,7 @@ made by:
 
 ### **Preview**
 ![ee2e_img](ee2e_img.png)
+![img](ee2e_img.png)
 
 ### **Components and Key Choices**
 
