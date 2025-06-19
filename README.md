@@ -5,6 +5,8 @@ made by:
 ### **End-to-End Encrypted Messaging Protocol Using RSA and AES**
 
 ### **Preview**
+- **Left side** shows the procces of the encryption
+- **Right side** shows the interface of the app
 ![img](e2ee_img.png)
 
 ### **Components and Key Choices**
