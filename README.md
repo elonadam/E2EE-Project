@@ -4,6 +4,9 @@ made by:
 
 ### **End-to-End Encrypted Messaging Protocol Using RSA and AES**
 
+### **Preview**
+![preview](ee2e img)
+
 ### **Components and Key Choices**
 
 #### **1. Encryption Algorithms**
