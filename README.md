@@ -5,7 +5,7 @@ made by:
 ### **End-to-End Encrypted Messaging Protocol Using RSA and AES**
 
 ### **Preview**
-![preview](ee2e img.png)
+![preview](ee2e_img.png)
 
 ### **Components and Key Choices**
 
